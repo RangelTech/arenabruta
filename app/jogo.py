@@ -16,7 +16,8 @@ RPM_MIN, RPM_MAX = 800, 7000
 ACEL = [0, 230, 170, 125, 95, 72]       # quanto o giro sobe por tick em cada marcha
 RELACAO = [0, 44, 33, 25, 19, 15]      # força multiplicada pela marcha (curta = força)
 TRACAO_IDEAL = 72
-VERSAO_MOTOR = 1
+PESO_CORRENTE = 300       # quanto mais alto, mais a corrente resiste (duelo dura mais)
+VERSAO_MOTOR = 2
 
 
 def torque(rpm: int) -> int:
@@ -148,7 +149,7 @@ def simular(entradas_a: list, entradas_b: list | None = None, bot_b: int | None 
             while ib < len(entradas_b) and entradas_b[ib][0] <= t:
                 aplicar(b, validar_cmd(entradas_b[ib][1])); ib += 1
         fa, fb = passo_carro(a), passo_carro(b)
-        pos += (fa - fb) // 40
+        pos += (fa - fb) // PESO_CORRENTE
         pos = max(-CHEGADA, min(CHEGADA, pos))
         if t % 2 == 0:
             quadros.append([t, pos, a["rpm"], a["marcha"], a["temp"], b["rpm"], b["marcha"], b["temp"]])

@@ -402,7 +402,7 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
                     if self.p["bot_nivel"]:
                         jogo.aplicar(self.carros["b"], jogo.bot_cmd(jogo.BOTS[self.p["bot_nivel"]], t, self.carros["b"]))
                     fa, fb = jogo.passo_carro(self.carros["a"]), jogo.passo_carro(self.carros["b"])
-                    self.pos = max(-jogo.CHEGADA, min(jogo.CHEGADA, self.pos + (fa - fb) // 40))
+                    self.pos = max(-jogo.CHEGADA, min(jogo.CHEGADA, self.pos + (fa - fb) // jogo.PESO_CORRENTE))
                     if t % 2 == 0:
                         await self.enviar({"t": "estado", "tick": t, "pos": self.pos,
                                            "a": {k: self.carros["a"][k] for k in ("rpm", "marcha", "temp", "forca", "fervendo", "patinou", "acel", "tracao")},
