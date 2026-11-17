@@ -2,7 +2,7 @@
 // cartões que passam de lado e um gráfico do motor só para ver (muda com animação conforme o acerto). Nada daqui muda a física além
 // do acerto (pneu, psi, relação, mapa); pintura e modelo são só visuais. As descrições falam do item, nunca do cenário onde usar.
 import * as THREE from 'three'
-import { criarCaminhonete, MODELOS, ambienteMetal, TEM_PINTURA } from './caminhonetes.js'
+import { criarCaminhonete, MODELOS, ambienteMetal, TEM_PINTURA, preCarregar } from './caminhonetes.js'
 
 const $ = (q, r = document) => r.querySelector(q)
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
@@ -48,6 +48,9 @@ function criarPalco(canvas) {
     carro = criarCaminhonete(modelo, cor, true)
     carro.g.position.set(0, 0, 0)
     piv.add(carro.g)
+    const aviso = document.getElementById('gar-carregando'), este = carro
+    if (aviso) aviso.hidden = false
+    carro.pronto.finally(() => { if (aviso && carro === este) aviso.hidden = true })
   }
   let raf = 0
   const quadro = () => {
@@ -168,6 +171,7 @@ function ligarAba() {
 function trocarCarro() {
   palco.mostrar(estado.modelo, parseInt(estado.cor.slice(1), 16))
   const i = IDS.indexOf(estado.modelo)
+  for (const d of [1, -1, 2]) preCarregar(IDS[(i + d + IDS.length) % IDS.length])   // as vizinhas já vão baixando
   $('#gar-nome').textContent = MODELOS[estado.modelo].nome; $('#gar-pos').textContent = `4x4 · ${i + 1}/${IDS.length}`
 }
 function resumo() {

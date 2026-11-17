@@ -1,6 +1,7 @@
 // App da Arena Bruta: lobby, partida 3D ao vivo (WebSocket, servidor autoritativo), carteira Pix, ranking e perfil.
 import { criarCena, MODELOS } from '/s/arena3d.js'
 import { abrirGaragem } from '/s/garagem.js'
+import { preCarregar } from '/s/caminhonetes.js'
 const MODELO_IDS = Object.keys(MODELOS)
 const corInt = (h, pad) => (/^#[0-9a-f]{6}$/i.test(h || '') ? parseInt(h.slice(1), 16) : pad)
 const modeloDe = (g) => (typeof g?.modelo === 'number' ? MODELO_IDS[g.modelo % MODELO_IDS.length] : (MODELOS[g?.modelo] ? g.modelo : null))
@@ -37,6 +38,7 @@ addEventListener('hashchange', () => { const v = location.hash.slice(1); if ($('
 
 async function carregarConta() {
   conta = await api('GET', '/api/conta')
+  preCarregar(modeloDe(conta.garagem) || 'fam3500')   // a máquina do jogador já baixa ao abrir o app
   $('#saldo-topo').innerHTML = arHtml(conta.saldo.disponivel)
   if (conta.perfil) $('#nivel-txt').textContent = `Nível ${conta.perfil.nivel} · ${conta.perfil.vitorias} vitórias · ${conta.perfil.xp} XP`
   return conta

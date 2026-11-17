@@ -57,8 +57,11 @@ function baixarReal(id) {
   return cache[id]
 }
 // coloca o modelo real no lugar do desenhado: frente em +x, comprimento L, rodas no chão, materiais próprios (pintura por caminhonete)
+export const preCarregar = (id) => baixarReal(id).catch(() => {})
 function montarReal(alvo, id, L, cor) {
-  baixarReal(id).then((base) => {
+  // enquanto o modelo real baixa, nada de caixinha: só engate e escapamento (invisíveis)
+  for (const filho of alvo.g.children) if (filho !== alvo.engate && filho !== alvo.escape) filho.visible = false
+  return baixarReal(id).then((base) => {
     const cfg = REAIS[id]
     const obj = base.clone(true)
     obj.traverse((x) => {
@@ -86,7 +89,9 @@ function montarReal(alvo, id, L, cor) {
     alvo.g.add(embrulho)
     alvo.real = embrulho
     alvo.rodas.length = 0
-  }).catch(() => {})
+  }).catch(() => {   // sem o arquivo: volta o desenhado
+    for (const filho of alvo.g.children) filho.visible = true
+  })
 }
 
 // ambiente de reflexo (sem arquivo externo): céu de pôr do sol + "softboxes"; sem isso o cromado sai preto
@@ -278,6 +283,6 @@ export function criarCaminhonete(modelo, cor, olhandoDireita) {
   const escape = new THREE.Object3D(); escape.position.set(escapeX, escapeY, escapeZ); g.add(escape)
   if (!olhandoDireita) g.rotation.y = Math.PI
   const saida = { g, rodas, engate, escape, nome: m.nome }
-  if (REAIS[modelo]) montarReal(saida, modelo, m.L, cor)
+  saida.pronto = REAIS[modelo] ? montarReal(saida, modelo, m.L, cor) : Promise.resolve()
   return saida
 }
