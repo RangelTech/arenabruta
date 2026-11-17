@@ -56,9 +56,19 @@ export function criarCena(canvas, opcoes = {}) {
     for (let x = -36; x <= 36; x += 4) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.6, 0.25), madeira); p.position.set(x, 0.8, z); p.castShadow = true; cena.add(p) }
     for (const y of [0.55, 1.25]) { const t = new THREE.Mesh(new THREE.BoxGeometry(72, 0.18, 0.12), madeira); t.position.set(0, y, z); cena.add(t) }
   }
-  const A = criarCaminhonete(opcoes.modeloA || 'fam3500', opcoes.corA ?? COR.ouro, false)   // a da esquerda puxa para a esquerda (pos > 0)
-  const B = criarCaminhonete(opcoes.modeloB || 's150', opcoes.corB ?? COR.militar, true)
+  let A = criarCaminhonete(opcoes.modeloA || 'fam3500', opcoes.corA ?? COR.ouro, false)   // a da esquerda puxa para a esquerda (pos > 0)
+  let B = criarCaminhonete(opcoes.modeloB || 's150', opcoes.corB ?? COR.militar, true)
   cena.add(A.g, B.g)
+  // piso de cada cenário (spec 46 §4): cor do chão e da névoa
+  const PISO = { curral: [0x7a5a3a, 0x3a2418], terra: [0x9a6a44, 0x4a2c18], compactada: [0x8a6a50, 0x3a2a20], lama: [0x4e3c2a, 0x2a2420],
+                 areia_arena: [0xc9a878, 0x3a2c22], praia: [0xead6a6, 0x7a6a5a], arena: [0x8a5a3a, 0x24161a] }
+  function trocar(o = {}) {
+    if (o.modeloA || o.corA != null) { cena.remove(A.g); A = criarCaminhonete(o.modeloA || 'fam3500', o.corA ?? COR.ouro, false); cena.add(A.g) }
+    if (o.modeloB || o.corB != null) { cena.remove(B.g); B = criarCaminhonete(o.modeloB || 's150', o.corB ?? COR.militar, true); cena.add(B.g) }
+    const p = PISO[o.piso]
+    if (p) { chao.material.color.setHex(p[0]).multiplyScalar(1.6); cena.fog.color.setHex(p[1]); cena.background.setHex(p[1]) }
+  }
+  if (opcoes.piso) trocar({ piso: opcoes.piso })
   // corrente: elos alternados entre os engates
   const elos = []
   const eloGeo = new THREE.TorusGeometry(0.16, 0.05, 8, 16)
@@ -158,6 +168,7 @@ export function criarCena(canvas, opcoes = {}) {
   quadro()
   return {
     atualizar(s) { estado = s },
+    trocar,
     tamanho,
     destruir() { cancelAnimationFrame(raf); r.dispose() },
   }

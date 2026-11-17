@@ -17,7 +17,7 @@
   <a class="marca" href="/"><span class="titulo">Arena Bruta</span></a>
   <div class="saldo-topo" id="saldo-topo" title="Saldo disponível em arrobas (1 @ = R$ 1,00)">0,00 @</div>
   <nav class="vistas" role="tablist">
-    <button data-v="lobby" class="on">Arenas</button><button data-v="carteira">Carteira</button><button data-v="ranking">Ranking</button><button data-v="perfil">Perfil</button>
+    <button data-v="lobby" class="on">Arenas</button><button data-v="box">Box</button><button data-v="carteira">Carteira</button><button data-v="ranking">Ranking</button><button data-v="perfil">Perfil</button>
   </nav>
 </header>
 
@@ -25,7 +25,9 @@
   <!-- LOBBY -->
   <section class="vista on" id="v-lobby">
     <div class="cab"><div><h1 class="bebas">Escolha a sua arena</h1><p id="nivel-txt" class="mut">Nível 1 · 0 vitórias</p></div>
-      <div class="troca-modo" role="radiogroup"><button data-modo="combate" class="on">Arena de Combate <small>valendo dinheiro</small></button><button data-modo="treino">Arena de Treino <small>grátis</small></button></div></div>
+      <div class="troca-modo" role="radiogroup"><button data-modo="combate" class="on">Arena de Combate <small>valendo dinheiro</small></button><button data-modo="treino">Modo História <small>treino grátis</small></button></div></div>
+    <div class="historia-ctrl" id="historia-ctrl" hidden><label>Nível do rival <b id="h-nivel-v">1</b><input type="range" id="h-nivel" min="1" max="20" value="1"></label><p class="mut">Suba a escada do 1 ao 20 em cada cenário. Não vale dinheiro: é para aprender o acerto do Box e a pilotagem.</p></div>
+    <div class="seu-acerto" id="seu-acerto"></div>
     <div class="arenas" id="arenas"></div>
     <p class="aviso-jogo">Jogue com responsabilidade. O máximo que você arrisca numa partida é a entrada da arena. Proibido para menores de 18.</p>
   </section>
@@ -45,11 +47,32 @@
     <div class="painel-ctrl">
       <div class="medidor"><svg viewBox="0 0 120 70" class="rpm"><path d="M10 64 A50 50 0 0 1 110 64" class="trilho"/><path d="M10 64 A50 50 0 0 1 110 64" class="cheio" id="rpm-arco"/></svg>
         <div class="rpm-txt"><b id="rpm">800</b><small>rpm</small></div><div class="temp"><i id="temp"></i></div><small class="mut" id="aviso-motor">temperatura</small></div>
-      <label class="tracao">Tração <b id="tracao-v">72%</b><input type="range" id="tracao" min="0" max="100" value="72"></label>
       <button class="btn-marcha" id="b-marcha" aria-label="Subir marcha">MARCHA <b>▲</b></button>
       <button class="btn-acel" id="b-acel" aria-label="Acelerar (segure)">ACELERAR</button>
     </div>
-    <p class="mut dica">Segure ACELERAR (ou a barra de espaço). Suba a marcha (seta para cima) perto de 5.000 rpm. Tração perto de 72% não patina. Acima de 6.000 rpm o motor esquenta.</p>
+    <div class="atributos" id="atributos"></div>
+    <p class="mut dica">Segure ACELERAR (ou a barra de espaço) e suba a marcha (seta para cima) no giro certo do seu mapa. Patinou? Alivie ou suba a marcha. O acerto (pneu, psi, relação e mapa) é feito no <a href="#box">Box</a>, antes de entrar.</p>
+  </section>
+
+  <!-- BOX: acerto e garagem (fora da arena; nada visual muda a potência) -->
+  <section class="vista" id="v-box">
+    <div class="cab"><div><h1 class="bebas">Box</h1><p class="mut">Monte a sua caminhonete antes de entrar. Estilos diferentes, bem pilotados, têm a mesma força: o acerto muda COMO você pilota, não quem ganha.</p></div></div>
+    <div class="box-grade">
+      <div class="card box-vitrine"><canvas id="box-cena"></canvas><b id="box-nome" class="bebas">FAM 3500</b></div>
+      <form class="card" id="f-box">
+        <h3>Garagem <small class="mut">(só visual)</small></h3>
+        <label>Caminhonete<select id="bx-modelo"></select></label>
+        <div class="cores"><label>Pintura<input type="color" id="bx-cor" value="#c49a46"></label><label>Rodas<input type="color" id="bx-roda" value="#d9d9d9"></label>
+          <div class="amostras" id="bx-amostras"></div></div>
+        <h3 style="margin-top:18px">Acerto <small class="mut">(vale para todas as arenas)</small></h3>
+        <div class="opcoes" id="bx-pneu"></div>
+        <label>Calibragem <b id="bx-psi-v">30 psi</b><input type="range" id="bx-psi" min="15" max="45" value="30"></label>
+        <div class="opcoes" id="bx-relacao"></div>
+        <div class="opcoes" id="bx-mapa"></div>
+        <p class="mut box-dica">Cada cenário tem um piso. Lama pede pneu com cravo e pouco ar; areia fofa, pneu bem murcho; terra firme, mais ar. Pouco ar demais ou ar demais: perde aderência e patina. Relação curta = força na saída e muita troca; longa = menos troca, força no fim. Mapa torque esquenta antes; potência pede giro alto.</p>
+        <button class="btn btn-ouro">Salvar acerto</button><p class="mut" id="bx-msg"></p>
+      </form>
+    </div>
   </section>
 
   <!-- CARTEIRA -->

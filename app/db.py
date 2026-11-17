@@ -53,6 +53,11 @@ class Banco:
         self.con.execute("PRAGMA journal_mode=WAL")
         self.con.executescript(ESQUEMA)
         # v0.1.4: "visto" = última vez que quem espera na fila consultou a partida (fila fantasma não pareia)
+        # v0.2 (motor v3, spec 46): cenário/piso, acerto de cada lado, perfil do bot; Box e Garagem no perfil
+        for tab, col, tipo in (("partidas", "piso", "TEXT"), ("partidas", "cenario", "TEXT"), ("partidas", "acerto_a", "TEXT"), ("partidas", "acerto_b", "TEXT"),
+                               ("partidas", "bot_perfil", "TEXT"), ("perfis", "acerto", "TEXT"), ("perfis", "garagem", "TEXT")):
+            if col not in [r[1] for r in self.con.execute(f"PRAGMA table_info({tab})")]:
+                self.con.execute(f"ALTER TABLE {tab} ADD COLUMN {col} {tipo}")
         if "visto" not in [r[1] for r in self.con.execute("PRAGMA table_info(partidas)")]:
             self.con.execute("ALTER TABLE partidas ADD COLUMN visto REAL NOT NULL DEFAULT 0")
             self.con.commit()

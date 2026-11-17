@@ -117,7 +117,9 @@ def test_contra_competidor_da_casa_sem_adversario(amb, monkeypatch):
     import app.main as M
     monkeypatch.setattr(M, "ESPERA_HUMANO_S", 0)
     v = a.get(f"/api/partida/{p['id']}").json()
-    assert v["estado"] == "pronta" and v["rival"]["nivel"] == 1 and v["rival"]["apelido"] == jogo.NOMES_BOT[0]
+    perfil = jogo.perfil_da_partida(p["id"])
+    assert v["estado"] == "pronta" and "nivel" not in v["rival"] and v["rival"]["apelido"] == jogo.PERFIS[perfil]["nome"]  # PvP: perfil, sem nível
+    assert v["cenario"]["piso"] == "terra" and v["ele"]["acerto"]["pneu"] in jogo.PNEUS  # a arena mostra o acerto do rival
     fim = jogar(a, p["id"], [])  # parado, perde para o bot
     assert fim["vencedor"] == "b"
     painel = adm.get("/api/painel/arena").json()
@@ -140,10 +142,11 @@ def test_tetos_da_casa_fecham_a_fila_de_bot(amb, monkeypatch):
 
 
 def test_motor_deterministico_1000_vezes():
-    ent = [[0, {"tracao": 70}], [3, {"acel": 1}], [40, {"marcha": 1}], [90, {"marcha": 1}], [150, {"marcha": 1}]]
-    base = jogo.simular(ent, bot_b=12)
+    ent = [[3, {"acel": 1}], [40, {"marcha": 1}], [90, {"marcha": 1}], [150, {"marcha": 1}]]
+    bot = jogo.ficha_bot("tecnico", "lama")
+    base = jogo.simular(ent, bot_b=bot, acerto_a={"pneu": "cravo", "psi": 18}, piso="lama")
     for _ in range(1000):
-        r = jogo.simular(ent, bot_b=12)
+        r = jogo.simular(ent, bot_b=bot, acerto_a={"pneu": "cravo", "psi": 18}, piso="lama")
         assert (r["vencedor"], r["posicao"], r["ticks"]) == (base["vencedor"], base["posicao"], base["ticks"])
 
 
@@ -156,11 +159,85 @@ def test_sem_aleatoriedade_no_codigo_do_jogo():
         assert proibido not in codigo, proibido
 
 
-def test_bots_tem_20_niveis_fixos_e_publicos(amb):
+def test_regulamento_publica_perfis_e_pisos(amb):
     app, pessoa, adm, dep = amb
     r = TestClient(app).get("/api/regulamento/niveis").json()
-    assert len(r["niveis"]) == 20 and r["niveis"][0]["troca"] < r["niveis"][19]["troca"]
-    assert jogo.BOTS == {n: jogo._ficha(n) for n in range(1, 21)}  # ficha é função pura do nível
+    assert len(r["perfis"]) == 6 and r["espera_humano_s"] == 15 and set(r["pisos"]) == set(jogo.PISOS)
+    assert [jogo.perfil_da_partida(n) for n in range(7)] == jogo.ORDEM_PERFIS + [jogo.ORDEM_PERFIS[0]]  # rodízio fixo
+
+
+def _otimo(piso, estilo):
+    rel, mapa = estilo.split("-")
+    ac = jogo.melhor_acerto_pneu(piso, rel, mapa)
+    return jogo.melhor_pilotagem(ac, piso, jogo.NORMA[piso][estilo])[0]
+
+
+def test_estilos_diferentes_no_otimo_tem_a_mesma_forca():
+    """Spec 46 §9.3: meritocracia por equivalência (±1%) em todo piso."""
+    for piso in jogo.PISOS:
+        tot = [_otimo(piso, e) for e in jogo.ESTILOS]
+        assert max(tot) - min(tot) <= max(tot) // 100, (piso, tot)
+
+
+def test_pneu_e_psi_errados_custam_caro():
+    for piso, errado in (("lama", "liso"), ("praia", "liso")):
+        bom = _otimo(piso, "media-torque")
+        ac = {"pneu": errado, "psi": jogo.PISOS[piso][errado][1], "relacao": "media", "mapa": "torque"}
+        assert jogo.melhor_pilotagem(ac, piso, jogo.NORMA[piso]["media-torque"])[0] < bom * 92 // 100
+        ac = dict(jogo.melhor_acerto_pneu(piso, "media", "torque")); ac["psi"] += 10
+        assert jogo.melhor_pilotagem(ac, piso, jogo.NORMA[piso]["media-torque"])[0] < bom * 92 // 100
+
+
+def test_bots_fortes_mas_bativeis():
+    """Todo perfil fica entre 95% e 99% do ótimo: dá trabalho, mas o jogador perfeito vence."""
+    for piso in ("terra", "lama", "praia"):
+        ref = _otimo(piso, "media-torque")
+        for pf in jogo.PERFIS:
+            fb = jogo.ficha_bot(pf, piso)
+            c = jogo.novo_carro(fb["acerto"], piso)
+            tot = 0
+            for t in range(jogo.DURACAO):
+                jogo.aplicar(c, jogo.piloto(fb["piloto"], t, c))
+                tot += jogo.passo_carro(c)
+            assert ref * 95 // 100 <= tot <= ref * 99 // 100, (piso, pf, tot * 100 / ref)
+        # o jogador que pilota no ótimo vence cada perfil
+        _, p = jogo.melhor_pilotagem(jogo.melhor_acerto_pneu(piso, "media", "torque"), piso, jogo.NORMA[piso]["media-torque"])
+        ent, c = [], jogo.novo_carro(jogo.melhor_acerto_pneu(piso, "media", "torque"), piso)
+        ultimo = {}
+        for t in range(jogo.DURACAO):
+            cmd = jogo.piloto(p, t, c)
+            if cmd != ultimo or "marcha" in cmd:
+                ent.append([t, cmd]); ultimo = {k: v for k, v in cmd.items() if k != "marcha"}
+            jogo.aplicar(c, cmd); jogo.passo_carro(c)
+        for pf in jogo.PERFIS:
+            r = jogo.simular(ent, bot_b=jogo.ficha_bot(pf, piso), acerto_a=jogo.melhor_acerto_pneu(piso, "media", "torque"), piso=piso)
+            assert r["vencedor"] == "a", (piso, pf, r["posicao"])
+
+
+def test_modo_historia_nivel_baixo_e_mais_fraco():
+    def tot(n):
+        fb = jogo.ficha_bot("tecnico", "terra", n); c = jogo.novo_carro(fb["acerto"], "terra"); s = 0
+        for t in range(jogo.DURACAO):
+            jogo.aplicar(c, jogo.piloto(fb["piloto"], t, c)); s += jogo.passo_carro(c)
+        return s
+    assert tot(1) < tot(10) < tot(20)
+
+
+def test_box_salva_acerto_e_garagem_e_cor_nao_muda_fisica(amb):
+    app, pessoa, adm, dep = amb
+    a = pessoa("a@x.com", "Peao1")
+    r = a.post("/api/box", json={"acerto": {"pneu": "cravo", "psi": 99, "relacao": "longa", "mapa": "potencia"}, "garagem": {"modelo": "s150", "cor": "#ff0000"}}).json()
+    assert r["acerto"] == {"pneu": "cravo", "psi": 45, "relacao": "longa", "mapa": "potencia"}  # psi limitado a 45
+    c = a.get("/api/conta").json()
+    assert c["acerto"]["pneu"] == "cravo" and c["garagem"]["modelo"] == "s150"
+    # a física não sabe de cor nem de modelo: só o acerto entra no motor
+    assert "garagem" not in jogo.novo_carro(c["acerto"], "terra")
+
+
+def test_replay_de_partida_antiga_usa_o_motor_v2():
+    from app import jogo_v2
+    ent = [[0, {"tracao": 70}], [3, {"acel": 1}], [40, {"marcha": 1}]]
+    assert jogo_v2.simular(ent, bot_b=12)["motor"] == 2
 
 
 def test_comissao_e_premios_das_arenas():
@@ -209,3 +286,11 @@ def test_pvp_comeca_mesmo_com_adversario_ausente(amb, monkeypatch):
     fim = jogar(a, pa["id"], [{"tracao": 72, "acel": 1}])  # "b" nunca conecta
     assert fim["vencedor"] == "a"
     assert adm.get("/api/painel/arena").json()["invariantes"]["soma_zero"]
+
+
+def test_corrente_sem_vies_de_lado():
+    """Mesmos comandos e mesmo acerto dos dois lados = posição final 0 (o arredondamento não favorece ninguém)."""
+    ent = [[0, {"acel": 1}], [40, {"marcha": 1}], [100, {"marcha": 1}], [170, {"marcha": 1}], [260, {"marcha": 1}]]
+    r = jogo.simular(ent, ent, None, {"relacao": "curta"}, {"relacao": "curta"}, "terra")
+    assert r["posicao"] == 0 and r["vencedor"] == "empate"
+    assert jogo.puxao(1, 300) == -jogo.puxao(300, 1)

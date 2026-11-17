@@ -55,7 +55,7 @@ main{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
 .resultado .linha{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .spin{width:48px;height:48px;border-radius:50%;border:4px solid rgba(196,154,70,.2);border-top-color:var(--ouro2);animation:gira 1s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
-.painel-ctrl{display:grid;grid-template-columns:1.1fr 1fr .9fr 1.4fr;gap:12px;margin-top:12px;align-items:stretch}
+.painel-ctrl{display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:12px;margin-top:12px;align-items:stretch}
 .medidor{position:relative;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;align-items:center}
 .rpm{width:150px;height:84px}.rpm path{fill:none;stroke-width:9;stroke-linecap:round}.rpm .trilho{stroke:#2c271f}.rpm .cheio{stroke:url(#g);stroke:var(--ouro2);stroke-dasharray:157;stroke-dashoffset:157;transition:stroke-dashoffset .1s linear}
 .rpm-txt{margin-top:-36px;text-align:center}.rpm-txt b{font-family:"Bebas Neue";font-size:30px}.rpm-txt small{color:var(--dim);margin-left:4px}
@@ -96,3 +96,29 @@ input,select{background:var(--bg2);border:1px solid var(--bd);border-radius:12px
 
 /* Arroba (@): moeda do jogo, 1 @ = R$ 1,00 */
 .arroba{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.arroba i{font-style:normal;display:inline-grid;place-items:center;width:1.15em;height:1.15em;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a8,#c49a46 55%,#7a5a22);color:#2a1d08;font-weight:900;font-size:.78em;box-shadow:0 0 0 1px rgba(255,220,140,.5),0 2px 6px rgba(0,0,0,.45)}
+
+/* spec 46: modo história, resumo do acerto, atributos na arena e Box */
+.historia-ctrl{display:flex;gap:18px;align-items:center;flex-wrap:wrap;border:1px solid var(--bd);border-radius:14px;padding:12px 16px;background:var(--card);margin:0 0 14px}
+.historia-ctrl label{display:flex;gap:10px;align-items:center;font-weight:700}.historia-ctrl input{width:220px;accent-color:var(--ouro)}.historia-ctrl p{margin:0;font-size:14px}
+.seu-acerto{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border:1px dashed var(--bd);border-radius:14px;padding:10px 14px;margin:0 0 16px;color:var(--mut);font-size:14px}
+.seu-acerto b{color:var(--ouro2)}.seu-acerto .btn{padding:8px 14px;font-size:14px}
+.atributos{display:grid;grid-template-columns:200px 1fr 1fr;gap:12px;margin-top:14px}
+.attr-cena{border:1px solid rgba(226,194,126,.35);border-radius:14px;padding:14px;background:linear-gradient(180deg,rgba(196,154,70,.15),transparent)}
+.attr-cena b{display:block;font-family:"Bebas Neue",Impact,sans-serif;font-size:24px;color:var(--ouro2);letter-spacing:.04em}.attr-cena span{color:var(--mut);font-size:14px}
+.attr{border:1px solid var(--bd);border-radius:14px;padding:12px 14px;background:var(--card)}
+.attr small{color:var(--dim);text-transform:uppercase;letter-spacing:.08em;font-size:11px}.attr>b{display:block;font-size:17px}
+.attr .carro{font-family:"Bebas Neue",Impact,sans-serif;color:var(--ouro2);font-size:20px;letter-spacing:.05em}
+.attr ul{list-style:none;padding:0;margin:6px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:13.5px;color:var(--mut)}.attr ul b{color:var(--fg)}
+.box-grade{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;align-items:start}
+.box-vitrine{position:relative;padding:0;overflow:hidden;aspect-ratio:16/11}.box-vitrine canvas{position:absolute;inset:0;width:100%;height:100%}
+.box-vitrine b{position:absolute;left:16px;bottom:12px;font-size:34px;color:var(--ouro2);text-shadow:0 2px 12px rgba(0,0,0,.8);letter-spacing:.05em}
+#f-box label{display:flex;flex-direction:column;gap:6px;margin:10px 0;font-weight:600}
+#f-box select,#f-box input[type=range]{width:100%}#f-box input[type=range]{accent-color:var(--ouro)}
+.cores{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}.cores label{margin:0!important}.cores input[type=color]{width:64px;height:40px;border:1px solid var(--bd);border-radius:10px;background:none;padding:2px}
+.amostras{display:flex;gap:6px}.amostras button{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.25);cursor:pointer}
+.opcoes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}.opcoes .rot{width:100%;font-weight:700;font-size:14px}
+.opcoes label{flex-direction:row!important;margin:0!important;cursor:pointer}.opcoes input{display:none}
+.opcoes span{display:inline-block;border:1px solid var(--bd);border-radius:999px;padding:7px 14px;font-size:14px;color:var(--mut);background:var(--card2)}
+.opcoes input:checked+span{border-color:var(--ouro);color:#1b140a;background:linear-gradient(180deg,#e2c27e,#b0852f);font-weight:700}
+.box-dica{font-size:13.5px;line-height:1.5}
+@media (max-width:900px){.atributos{grid-template-columns:1fr}.box-grade{grid-template-columns:1fr}}

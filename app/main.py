@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("arenabruta")
 COOKIE = "arenabruta_s"
 ESTATICO = Path(__file__).resolve().parent.parent / "static"
-ESPERA_HUMANO_S = 6         # sem adversário humano nesse tempo -> competidor da casa
+ESPERA_HUMANO_S = 15        # sem adversário humano nesse tempo -> competidor da casa (decisão do Lucas, spec 46 §9.6)
 VIVO_S = 10                 # só pareia com quem consultou a fila nesse tempo (quem fechou a página não vira fantasma)
 ABANDONO_S = 60             # vaga na fila sem consulta há mais que isso: cancelada e entrada devolvida
 ESPERA_ADVERSARIO_S = 20    # PvP: adversário que não conecta nesse tempo -> começa assim mesmo (carro dele parado, regra publicada)
@@ -119,15 +119,38 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
             return False, "teto_ganho_jogador"
         return True, ""
 
+    def ficha_do_bot(p: dict) -> dict | None:
+        if not p["bot_nivel"]:
+            return None
+        perfil_bot = p.get("bot_perfil") or jogo.perfil_da_partida(p["id"])
+        return jogo.ficha_bot(perfil_bot, p.get("piso") or "curral", None if p["modo"] == "combate" else p["bot_nivel"])
+
+    def garagem_de(uid: int | None) -> dict:
+        o = perfil(uid) if uid else None
+        try:
+            return json.loads(o["garagem"]) if o and o.get("garagem") else {}
+        except (ValueError, TypeError):
+            return {}
+
     def vista_partida(p: dict, uid: int) -> dict:
         lado = "a" if p["jog_a"] == uid else "b"
-        if p["bot_nivel"]:
-            rival = {"apelido": jogo.NOMES_BOT[p["bot_nivel"] - 1], "nivel": p["bot_nivel"]}
+        outro = "b" if lado == "a" else "a"
+        bot = ficha_do_bot(p)
+        acertos = {"a": json.loads(p["acerto_a"]) if p.get("acerto_a") else None, "b": json.loads(p["acerto_b"]) if p.get("acerto_b") else None}
+        if bot:
+            acertos["b"] = bot["acerto"]
+            rival = {"apelido": bot["nome"], "garagem": {"modelo": jogo.ORDEM_PERFIS.index(bot["perfil"]) % 9, "perfil": bot["perfil"]}}
+            if p["modo"] != "combate":
+                rival["nivel"] = p["bot_nivel"]  # só o modo história mostra nível
         else:
-            o = perfil(p["jog_b"] if lado == "a" else p["jog_a"]) if (p["jog_b"] and p["jog_a"]) else None
-            rival = {"apelido": o["apelido"], "nivel": o["nivel"]} if o else None
+            o_id = p["jog_b"] if lado == "a" else p["jog_a"]
+            o = perfil(o_id) if (p["jog_b"] and p["jog_a"]) else None
+            rival = {"apelido": o["apelido"], "garagem": garagem_de(o_id)} if o else None
+        nome_cena, piso = jogo.CENARIOS.get(p["arena"] if p["modo"] == "combate" else (p.get("cenario") or "treino"), jogo.CENARIOS["treino"])
         return {"id": p["id"], "arena": p["arena"], "modo": p["modo"], "entrada": p["entrada"], "estado": p["estado"], "lado": lado,
-                "rival": rival, "vencedor": p["vencedor"], "premio": ledger.premio(p["entrada"], cfg.comissao_pct) if p["modo"] == "combate" else 0}
+                "rival": rival, "vencedor": p["vencedor"], "premio": ledger.premio(p["entrada"], cfg.comissao_pct) if p["modo"] == "combate" else 0,
+                "cenario": {"id": p.get("cenario") or p["arena"], "nome": nome_cena, "piso": p.get("piso") or piso, "piso_nome": jogo.PISOS[p.get("piso") or piso]["nome"]},
+                "eu": {"acerto": acertos[lado], "garagem": garagem_de(uid)}, "ele": {"acerto": acertos[outro]}}
 
     # ------------------------------------------------ login (padrão dos produtos)
     @app.get("/health")
@@ -179,7 +202,8 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
     def arenas():
         return {"arenas": [{"id": k, "nome": n, "entrada": e, "premio": ledger.premio(e, cfg.comissao_pct), "comissao": ledger.comissao(e, cfg.comissao_pct)}
                            for k, (n, e) in ledger.ARENAS.items()],
-                "comissao_pct": cfg.comissao_pct, "niveis": [{"nivel": n, "nome": jogo.NOMES_BOT[n - 1]} for n in range(1, 21)]}
+                "comissao_pct": cfg.comissao_pct, "cenarios": {k: {"nome": n, "piso": pi, "piso_nome": jogo.PISOS[pi]["nome"]} for k, (n, pi) in jogo.CENARIOS.items()},
+                "historia": [{"nivel": n} for n in range(1, 21)], "perfis": {k: v["nome"] for k, v in jogo.PERFIS.items()}}
 
     @app.get("/api/ranking")
     def ranking():
@@ -187,8 +211,12 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
 
     @app.get("/api/regulamento/niveis")
     def regulamento():
-        """Tabela publicada: os 20 níveis fixos dos competidores da casa (sem aleatoriedade)."""
-        return {"versao_motor": jogo.VERSAO_MOTOR, "niveis": [{k: v for k, v in jogo.BOTS[n].items()} | {"nome": jogo.NOMES_BOT[n - 1]} for n in range(1, 21)]}
+        """Tabela publicada: perfis fixos dos competidores da casa (PvP) e a escada do modo história (sem aleatoriedade)."""
+        return {"versao_motor": jogo.VERSAO_MOTOR, "espera_humano_s": ESPERA_HUMANO_S,
+                "perfis": [{"id": k, "nome": v["nome"], "estilo": v["estilo"], "defeito": v["defeito"]} for k, v in jogo.PERFIS.items()],
+                "rodizio": "a partida de número n enfrenta o perfil n módulo 6, na ordem acima",
+                "pisos": {k: {"nome": v["nome"], **{pn: {"mu": v[pn][0], "psi_ideal": v[pn][1]} for pn in jogo.PNEUS}} for k, v in jogo.PISOS.items()},
+                "cenarios": {k: {"nome": n, "piso": pi} for k, (n, pi) in jogo.CENARIOS.items()}}
 
     # ------------------------------------------------ conta e perfil
     @app.get("/api/conta")
@@ -196,7 +224,21 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
         u = usuario(request)
         p = perfil(u["id"])
         return {"email": u["email"], "perfil": p and {k: p[k] for k in ("apelido", "nascimento", "pix_chave", "pix_tipo", "nivel", "xp", "vitorias", "derrotas", "limite_dep_dia", "autoexclusao_ate")},
-                "saldo": ledger.saldos(db, u["id"]), "nivel_rival": jogo.nivel_bot_para(p["nivel"]) if p else 1}
+                "saldo": ledger.saldos(db, u["id"]), "acerto": jogo.validar_acerto(json.loads(p["acerto"]) if p and p.get("acerto") else None),
+                "garagem": garagem_de(u["id"]),
+                "box": {"pneus": jogo.PNEUS, "relacoes": list(jogo.RELACOES), "mapas": {k: v["nome"] for k, v in jogo.MAPAS.items()}, "psi": [jogo.PSI_MIN, jogo.PSI_MAX]}}
+
+    @app.post("/api/box")
+    async def salvar_box(request: Request):
+        """Box (fora da arena): acerto e garagem ficam no perfil; a partida tira uma foto do acerto na hora de entrar."""
+        u = usuario(request)
+        exigir_perfil(u)
+        b = await request.json()
+        ac = jogo.validar_acerto(b.get("acerto"))
+        g = b.get("garagem") or {}
+        garagem = {"modelo": str(g.get("modelo") or "fam3500")[:20], "cor": str(g.get("cor") or "#c49a46")[:9], "roda": str(g.get("roda") or "#d9d9d9")[:9]}
+        db.exec("UPDATE perfis SET acerto=?, garagem=? WHERE usuario=?", (json.dumps(ac), json.dumps(garagem), u["id"]))
+        return {"ok": True, "acerto": ac, "garagem": garagem}
 
     @app.post("/api/perfil")
     async def salvar_perfil(request: Request):
@@ -299,10 +341,15 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
             raise HTTPException(422, "arena inválida")
         if db.um("SELECT 1 FROM partidas WHERE (jog_a=? OR jog_b=?) AND estado IN ('fila','pronta','jogando')", (u["id"], u["id"])):
             raise HTTPException(409, "você já está numa partida")
+        meu_acerto = json.dumps(jogo.validar_acerto(json.loads(p["acerto"]) if p.get("acerto") else None))  # foto do Box na entrada
         if modo == "treino":
-            nivel = max(1, min(20, int(b.get("nivel") or jogo.nivel_bot_para(p["nivel"]))))
-            pid = db.exec("INSERT INTO partidas(jogo,arena,modo,entrada,jog_a,bot_nivel,estado,criado) VALUES(?,?,?,?,?,?,?,?)",
-                          ("cabo-de-guerra", arena, "treino", 0, u["id"], nivel, "pronta", agora())).lastrowid
+            # modo história / treino (grátis): escolhe cenário e nível 1..20 do rival; perfil por rodízio
+            nivel = max(1, min(20, int(b.get("nivel") or 1)))
+            cen = str(b.get("cenario") or "treino")
+            cen = cen if cen in jogo.CENARIOS else "treino"
+            pid = db.exec("INSERT INTO partidas(jogo,arena,modo,entrada,jog_a,bot_nivel,estado,criado,cenario,piso,acerto_a) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                          ("cabo-de-guerra", arena, "treino", 0, u["id"], nivel, "pronta", agora(), cen, jogo.CENARIOS[cen][1], meu_acerto)).lastrowid
+            db.exec("UPDATE partidas SET bot_perfil=? WHERE id=?", (jogo.perfil_da_partida(pid), pid))
             return vista_partida(db.um("SELECT * FROM partidas WHERE id=?", (pid,)), u["id"])
         entrada = ledger.ARENAS[arena][1]
         limpar_abandonos()
@@ -314,10 +361,11 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
                 ledger.reservar(db, u["id"], entrada, alvo["id"])
             except ledger.SaldoInsuficiente:
                 raise HTTPException(402, "saldo insuficiente para esta arena")
-            db.exec("UPDATE partidas SET jog_b=?, estado='pronta' WHERE id=? AND jog_b IS NULL", (u["id"], alvo["id"]))
+            db.exec("UPDATE partidas SET jog_b=?, acerto_b=?, estado='pronta' WHERE id=? AND jog_b IS NULL", (u["id"], meu_acerto, alvo["id"]))
             return vista_partida(db.um("SELECT * FROM partidas WHERE id=?", (alvo["id"],)), u["id"])
-        pid = db.exec("INSERT INTO partidas(jogo,arena,modo,entrada,jog_a,estado,criado,visto) VALUES(?,?,?,?,?,?,?,?)",
-                      ("cabo-de-guerra", arena, "combate", entrada, u["id"], "fila", agora(), agora())).lastrowid
+        nome_cena, piso_arena = jogo.CENARIOS[arena]
+        pid = db.exec("INSERT INTO partidas(jogo,arena,modo,entrada,jog_a,estado,criado,visto,cenario,piso,acerto_a) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                      ("cabo-de-guerra", arena, "combate", entrada, u["id"], "fila", agora(), agora(), arena, piso_arena, meu_acerto)).lastrowid
         try:
             ledger.reservar(db, u["id"], entrada, pid)
         except ledger.SaldoInsuficiente:
@@ -337,8 +385,8 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
         if p["estado"] == "fila" and agora() - p["criado"] >= ESPERA_HUMANO_S:
             ok, motivo = pode_bot(p["jog_a"], p["entrada"])
             if ok:
-                nivel = jogo.nivel_bot_para(perfil(p["jog_a"])["nivel"])
-                db.exec("UPDATE partidas SET bot_nivel=?, estado='pronta' WHERE id=? AND estado='fila'", (nivel, pid))
+                # PvP sem nível: entra um PERFIL da casa (rodízio fixo pela partida), sempre na força cheia (bot_nivel = 20)
+                db.exec("UPDATE partidas SET bot_nivel=20, bot_perfil=?, estado='pronta' WHERE id=? AND estado='fila'", (jogo.perfil_da_partida(pid), pid))
                 p = db.um("SELECT * FROM partidas WHERE id=?", (pid,))
         return vista_partida(p, u["id"])
 
@@ -371,8 +419,18 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
         p = db.um("SELECT * FROM partidas WHERE id=? AND (jog_a=? OR jog_b=?) AND estado='terminada'", (pid, u["id"], u["id"]))
         if not p:
             raise HTTPException(404, "replay não encontrado")
-        r = jogo.simular(json.loads(p["entradas_a"] or "[]"), json.loads(p["entradas_b"] or "[]"), p["bot_nivel"])
+        r = refazer(p)
         return {"vencedor": r["vencedor"], "confere": r["vencedor"] == p["vencedor"], "quadros": r["quadros"]}
+
+    def refazer(p: dict, entradas_a: list | None = None, entradas_b: list | None = None) -> dict:
+        """Replay oficial: refaz a conta com o motor da versão em que a partida foi jogada."""
+        ea = entradas_a if entradas_a is not None else json.loads(p["entradas_a"] or "[]")
+        eb = entradas_b if entradas_b is not None else json.loads(p["entradas_b"] or "[]")
+        motor = json.loads(p["resultado"] or "{}").get("motor") if p.get("resultado") else None
+        if motor == 2 or (motor is None and not p.get("piso") and p.get("estado") == "terminada"):
+            from app import jogo_v2
+            return jogo_v2.simular(ea, eb, p["bot_nivel"])
+        return jogo.simular(ea, eb, ficha_do_bot(p), json.loads(p["acerto_a"] or "null"), json.loads(p["acerto_b"] or "null"), p.get("piso") or "curral")
 
     # ------------------------------------------------ partida ao vivo (WebSocket)
     class Ao:
@@ -380,7 +438,10 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
 
         def __init__(self, p: dict):
             self.p = p
-            self.carros = {"a": jogo.novo_carro(), "b": jogo.novo_carro()}
+            piso = p.get("piso") or "curral"
+            self.bot = ficha_do_bot(p)
+            self.carros = {"a": jogo.novo_carro(json.loads(p["acerto_a"] or "null"), piso),
+                           "b": jogo.novo_carro(self.bot["acerto"] if self.bot else json.loads(p["acerto_b"] or "null"), piso)}
             self.fila = {"a": [], "b": []}
             self.entradas = {"a": [], "b": []}
             self.ws: dict[str, WebSocket] = {}
@@ -422,14 +483,14 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
                             jogo.aplicar(self.carros[lado], cmd)
                             self.entradas[lado].append([t, cmd])
                         self.fila[lado] = []
-                    if self.p["bot_nivel"]:
-                        jogo.aplicar(self.carros["b"], jogo.bot_cmd(jogo.BOTS[self.p["bot_nivel"]], t, self.carros["b"]))
+                    if self.bot:
+                        jogo.aplicar(self.carros["b"], jogo.piloto(self.bot["piloto"], t, self.carros["b"]))
                     fa, fb = jogo.passo_carro(self.carros["a"]), jogo.passo_carro(self.carros["b"])
-                    self.pos = max(-jogo.CHEGADA, min(jogo.CHEGADA, self.pos + (fa - fb) // jogo.PESO_CORRENTE))
+                    self.pos = max(-jogo.CHEGADA, min(jogo.CHEGADA, self.pos + jogo.puxao(fa, fb)))
                     if t % 2 == 0:
                         await self.enviar({"t": "estado", "tick": t, "pos": self.pos,
-                                           "a": {k: self.carros["a"][k] for k in ("rpm", "marcha", "temp", "forca", "fervendo", "patinou", "acel", "tracao")},
-                                           "b": {k: self.carros["b"][k] for k in ("rpm", "marcha", "temp", "forca", "fervendo", "patinou", "acel", "tracao")}})
+                                           "a": {k: self.carros["a"][k] for k in ("rpm", "marcha", "temp", "forca", "fervendo", "patinou", "acel")},
+                                           "b": {k: self.carros["b"][k] for k in ("rpm", "marcha", "temp", "forca", "fervendo", "patinou", "acel")}})
                     if abs(self.pos) >= jogo.CHEGADA or t + 1 >= jogo.DURACAO:
                         break
                 elif self.tick % jogo.TICKS_S == 0:
@@ -443,7 +504,7 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
         async def encerrar(self):
             p = self.p
             # o resultado oficial é o replay das entradas gravadas (garante que ao vivo == replay)
-            r = jogo.simular(self.entradas["a"], self.entradas["b"], p["bot_nivel"])
+            r = refazer(p, self.entradas["a"], self.entradas["b"])
             venc = r["vencedor"]
             db.exec("UPDATE partidas SET estado='terminada', vencedor=?, resultado=?, fim=?, entradas_a=?, entradas_b=? WHERE id=?",
                     (venc, json.dumps({"posicao": r["posicao"], "ticks": r["ticks"], "motor": r["motor"]}), agora(),
