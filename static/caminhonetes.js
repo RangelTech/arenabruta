@@ -2,7 +2,9 @@
 // Estilo das grandonas americanas: cabine dupla, capô alto, grade enorme, rodado duplo atrás, luzes âmbar no teto.
 // criarCaminhonete(modelo, cor, olhandoDireita) -> { g, rodas, engate, escape, nome }
 // A frente fica em +x; o engate da corrente fica no para-choque traseiro.
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js'
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
 
 // medidas em "metros de cena" (a cena antiga usava 5,2 de comprimento; estas têm ~6)
 export const MODELOS = {
@@ -15,6 +17,76 @@ export const MODELOS = {
   fanger:   { nome: 'FANGER',   tipo: 'pickup', dupla: false, L: 5.4, W: 1.98, capo: 1.75, teto: 2.65, grade: 'quadrada', faroisC: false, luzesTeto: false, chamine: false },
   exkaledi: { nome: 'EXKALEDI', tipo: 'suv',    dupla: false, L: 5.6, W: 2.1,  capo: 1.9,  teto: 2.95, grade: 'vertical', faroisC: false, luzesTeto: false, chamine: false },
   fw4:      { nome: 'FW4',      tipo: 'suv',    dupla: false, L: 5.0, W: 1.95, capo: 1.75, teto: 2.65, grade: 'aberta',   faroisC: false, luzesTeto: false, chamine: false },
+  z10:      { nome: 'Z10 Antiga', tipo: 'pickup', dupla: false, L: 5.2, W: 1.95, capo: 1.7, teto: 2.6,  grade: 'aberta',   faroisC: false, luzesTeto: false, chamine: false },
+  tritao:   { nome: 'TRITÃO',   tipo: 'pickup', dupla: false, L: 5.3, W: 1.95, capo: 1.72, teto: 2.62, grade: 'dividida', faroisC: false, luzesTeto: false, chamine: false },
+  fronteira: { nome: 'FRONTEIRA', tipo: 'pickup', dupla: false, L: 5.3, W: 1.98, capo: 1.74, teto: 2.64, grade: 'quadrada', faroisC: false, luzesTeto: false, chamine: false },
+  pajerao:  { nome: 'PAJERÃO',  tipo: 'suv',    dupla: false, L: 4.9, W: 1.95, capo: 1.75, teto: 2.7,  grade: 'vertical', faroisC: false, luzesTeto: false, chamine: false },
+  touro:    { nome: 'TOURO',    tipo: 'pickup', dupla: false, L: 5.0, W: 1.9,  capo: 1.65, teto: 2.55, grade: 'colmeia',  faroisC: false, luzesTeto: false, chamine: false },
+  defenda:  { nome: 'DEFENDA Clássica', tipo: 'suv', dupla: false, L: 4.8, W: 1.9, capo: 1.8, teto: 2.75, grade: 'aberta', faroisC: false, luzesTeto: false, chamine: false },
+  ranglao:  { nome: 'RANGLÃO Clássico', tipo: 'suv', dupla: false, L: 4.3, W: 1.85, capo: 1.75, teto: 2.6, grade: 'vertical', faroisC: false, luzesTeto: false, chamine: false },
+  landkruzer: { nome: 'LAND KRUZER Clássica', tipo: 'suv', dupla: false, L: 4.4, W: 1.9, capo: 1.8, teto: 2.7, grade: 'aberta', faroisC: false, luzesTeto: false, chamine: false },
+}
+
+// Modelos 3D reais (Sketchfab, CC-BY / Free Standard; créditos em /s/modelos/creditos.json e no regulamento).
+// rotY: gira para a frente ficar em +x. pintura: materiais da lataria (a Garagem troca a cor). esconder: logos/emblemas.
+const REAIS = {
+  fam3500: { rotY: Math.PI / 2, pintura: ['1___Default'] },
+  fam2500: { rotY: Math.PI / 2, pintura: ['bodypaint_A__tinted', '2500_Red__tinted', 'trunk_paint__tinted'], esconder: /logo|red_tag/i },
+  fam1500: { rotY: Math.PI / 2, pintura: ['RAM_1500TRX_2021Paint_Material'], esconder: /badge/i },
+  s150: { rotY: Math.PI / 2, pintura: ['Body'], esconder: /logo/i },
+  filux: { rotY: -Math.PI / 2, pintura: ['primary'] },
+  kmarok: { rotY: Math.PI / 2, pintura: ['Silver_paint_metallic'] },
+  fanger: { rotY: Math.PI / 2, pintura: [] },
+  exkaledi: { rotY: Math.PI / 2, pintura: ['EPaint_Body_swb1'], esconder: /badge/i },
+  fw4: { rotY: -Math.PI / 2, pintura: ['primary.002', 'Exterior.1'] },
+  z10: { rotY: Math.PI / 2, pintura: ['carpaint'] },
+  tritao: { rotY: Math.PI / 2, pintura: [] },
+  fronteira: { rotY: Math.PI / 2, pintura: [] },
+  pajerao: { rotY: Math.PI / 2, pintura: ['Body'] },
+  touro: { rotY: -Math.PI / 2, pintura: ['primary.002'] },
+  defenda: { rotY: Math.PI / 2, pintura: ['defenderM_CarPaint_Max1'], esconder: /badge/i },
+  ranglao: { rotY: Math.PI / 2, pintura: [] },
+  landkruzer: { rotY: Math.PI / 2, pintura: [] },
+}
+export const TEM_PINTURA = Object.fromEntries(Object.entries(REAIS).map(([k, v]) => [k, v.pintura.length > 0]))
+const carregador = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
+const cache = {}
+function baixarReal(id) {
+  if (!REAIS[id]) return Promise.reject(new Error('sem modelo real'))
+  cache[id] ||= new Promise((ok, erro) => carregador.load(`/s/modelos/${id}.glb`, (g) => ok(g.scene), undefined, erro))
+  return cache[id]
+}
+// coloca o modelo real no lugar do desenhado: frente em +x, comprimento L, rodas no chão, materiais próprios (pintura por caminhonete)
+function montarReal(alvo, id, L, cor) {
+  baixarReal(id).then((base) => {
+    const cfg = REAIS[id]
+    const obj = base.clone(true)
+    obj.traverse((x) => {
+      if (!x.isMesh) return
+      x.material = Array.isArray(x.material) ? x.material.map((m) => m.clone()) : x.material.clone()
+      x.castShadow = x.receiveShadow = true
+      for (const m of [].concat(x.material)) {
+        m.side = THREE.DoubleSide
+        if (cfg.esconder && cfg.esconder.test(m.name || '')) x.visible = false
+        if (cfg.pintura.includes(m.name) && cor != null) { m.color.set(cor); if (m.map) { m.color.multiplyScalar(1.35) } }
+      }
+    })
+    const embrulho = new THREE.Group()
+    embrulho.add(obj)
+    obj.rotation.y = cfg.rotY
+    let box = new THREE.Box3().setFromObject(embrulho)
+    const tam = box.getSize(new THREE.Vector3())
+    const esc = L / Math.max(tam.x, 0.001)
+    embrulho.scale.setScalar(esc)
+    box = new THREE.Box3().setFromObject(embrulho)
+    const c = box.getCenter(new THREE.Vector3())
+    embrulho.position.set(-c.x, -box.min.y, -c.z)
+    // troca: esconde o desenhado (mantém engate e escapamento) e põe o real
+    for (const filho of [...alvo.g.children]) if (filho !== alvo.engate && filho !== alvo.escape) filho.visible = false
+    alvo.g.add(embrulho)
+    alvo.real = embrulho
+    alvo.rodas.length = 0
+  }).catch(() => {})
 }
 
 // ambiente de reflexo (sem arquivo externo): céu de pôr do sol + "softboxes"; sem isso o cromado sai preto
@@ -205,5 +277,7 @@ export function criarCaminhonete(modelo, cor, olhandoDireita) {
   add(new THREE.BoxGeometry(0.4, 0.1, 0.1), cromo, -h - 0.25, 0.85, 0)                                         // bola do engate
   const escape = new THREE.Object3D(); escape.position.set(escapeX, escapeY, escapeZ); g.add(escape)
   if (!olhandoDireita) g.rotation.y = Math.PI
-  return { g, rodas, engate, escape, nome: m.nome }
+  const saida = { g, rodas, engate, escape, nome: m.nome }
+  if (REAIS[modelo]) montarReal(saida, modelo, m.L, cor)
+  return saida
 }

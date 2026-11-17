@@ -1,7 +1,7 @@
 // Cena 3D da Arena Bruta (three.js): duas caminhonetes puxando a corrente na poeira do pôr do sol.
 // criarCena(canvas, { modo: 'heroi' | 'jogo' }) -> { atualizar(estado), destruir() }
 // estado = { pos (-10000..10000), a:{rpm,forca,acel,temp,fervendo,patinou}, b:{...} }  (só visual: quem decide é o servidor)
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js'
+import * as THREE from 'three'
 import { criarCaminhonete, ambienteMetal, MODELOS } from './caminhonetes.js'
 export { MODELOS }
 
