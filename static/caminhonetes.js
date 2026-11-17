@@ -6,11 +6,15 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 
 // medidas em "metros de cena" (a cena antiga usava 5,2 de comprimento; estas têm ~6)
 export const MODELOS = {
-  touro3500:   { nome: 'Touro 3500',   tipo: 'pickup', dupla: true,  L: 6.2, W: 2.15, capo: 2.05, teto: 2.95, grade: 'quadrada', faroisC: false, luzesTeto: true,  chamine: true },
-  brutus2500:  { nome: 'Brutus 2500',  tipo: 'pickup', dupla: false, L: 6.0, W: 2.1,  capo: 2.0,  teto: 2.9,  grade: 'dividida', faroisC: false, luzesTeto: true,  chamine: false },
-  tropeiro150: { nome: 'Tropeiro 150', tipo: 'pickup', dupla: false, L: 5.8, W: 2.05, capo: 1.85, teto: 2.8,  grade: 'colmeia',  faroisC: true,  luzesTeto: false, chamine: false },
-  coronel:     { nome: 'Coronel',      tipo: 'suv',    dupla: false, L: 5.6, W: 2.1,  capo: 1.9,  teto: 2.95, grade: 'vertical', faroisC: false, luzesTeto: false, chamine: false },
-  tubarao:     { nome: 'Tubarão',      tipo: 'pickup', dupla: false, L: 5.7, W: 2.05, capo: 1.8,  teto: 2.75, grade: 'aberta',   faroisC: false, luzesTeto: false, chamine: false },
+  fam3500:  { nome: 'FAM 3500', tipo: 'pickup', dupla: true,  L: 6.2, W: 2.15, capo: 2.05, teto: 2.95, grade: 'quadrada', faroisC: false, luzesTeto: true,  chamine: true },
+  fam2500:  { nome: 'FAM 2500', tipo: 'pickup', dupla: false, L: 6.0, W: 2.1,  capo: 2.0,  teto: 2.9,  grade: 'quadrada', faroisC: false, luzesTeto: true,  chamine: false },
+  fam1500:  { nome: 'FAM 1500', tipo: 'pickup', dupla: false, L: 5.8, W: 2.05, capo: 1.9,  teto: 2.8,  grade: 'quadrada', faroisC: false, luzesTeto: false, chamine: false },
+  s150:     { nome: 'S150',     tipo: 'pickup', dupla: false, L: 5.8, W: 2.05, capo: 1.85, teto: 2.8,  grade: 'colmeia',  faroisC: true,  luzesTeto: false, chamine: false },
+  filux:    { nome: 'Filux',    tipo: 'pickup', dupla: false, L: 5.3, W: 1.95, capo: 1.7,  teto: 2.6,  grade: 'aberta',   faroisC: false, luzesTeto: false, chamine: false },
+  kmarok:   { nome: 'KMAROK',   tipo: 'pickup', dupla: false, L: 5.3, W: 2.0,  capo: 1.72, teto: 2.62, grade: 'dividida', faroisC: false, luzesTeto: false, chamine: false },
+  fanger:   { nome: 'FANGER',   tipo: 'pickup', dupla: false, L: 5.4, W: 1.98, capo: 1.75, teto: 2.65, grade: 'quadrada', faroisC: false, luzesTeto: false, chamine: false },
+  exkaledi: { nome: 'EXKALEDI', tipo: 'suv',    dupla: false, L: 5.6, W: 2.1,  capo: 1.9,  teto: 2.95, grade: 'vertical', faroisC: false, luzesTeto: false, chamine: false },
+  fw4:      { nome: 'FW4',      tipo: 'suv',    dupla: false, L: 5.0, W: 1.95, capo: 1.75, teto: 2.65, grade: 'aberta',   faroisC: false, luzesTeto: false, chamine: false },
 }
 
 // ambiente de reflexo (sem arquivo externo): céu de pôr do sol + "softboxes"; sem isso o cromado sai preto
@@ -83,7 +87,7 @@ function roda(raio, largura, dupla, lado) {
 }
 
 export function criarCaminhonete(modelo, cor, olhandoDireita) {
-  const m = MODELOS[modelo] || MODELOS.touro3500
+  const m = MODELOS[modelo] || MODELOS.fam3500
   const g = new THREE.Group()
   const pint = new THREE.MeshStandardMaterial({ color: cor, metalness: 0.7, roughness: 0.28 })
   const preto = MAT.preto(), cromo = MAT.cromo(), vidro = MAT.vidro()

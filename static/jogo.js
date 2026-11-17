@@ -5,6 +5,9 @@ const $ = (q, r = document) => r.querySelector(q)
 const $$ = (q, r = document) => [...r.querySelectorAll(q)]
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const brl = (c) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',')
+// Arroba (@): a moeda do jogo, 1 @ = R$ 1,00 (par a par). O saldo, as entradas e os prêmios aparecem em arrobas.
+const ar = (c) => (c / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' @'
+const arHtml = (c) => `<span class="arroba">${ar(c).replace(' @', '')}<i>@</i></span>`
 let conta = null, modo = 'combate', arenasCache = [], cena = null, ws = null, partida = null, lado = 'a', ultimaArena = null
 let toastT = 0
 const toast = (t) => { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (el.hidden = true), 4500) }
@@ -30,7 +33,7 @@ addEventListener('hashchange', () => { const v = location.hash.slice(1); if ($('
 
 async function carregarConta() {
   conta = await api('GET', '/api/conta')
-  $('#saldo-topo').textContent = brl(conta.saldo.disponivel)
+  $('#saldo-topo').innerHTML = arHtml(conta.saldo.disponivel)
   if (conta.perfil) $('#nivel-txt').textContent = `Nível ${conta.perfil.nivel} · ${conta.perfil.vitorias} vitórias · ${conta.perfil.xp} XP`
   return conta
 }
@@ -47,8 +50,8 @@ function desenharArenas() {
   $('#arenas').innerHTML = arenasCache.map((a, i) => {
     const pode = modo === 'treino' || disp >= a.entrada
     return `<div class="arena ${pode ? '' : 'travada'}"><small>Arena ${i + 1}</small><h3>${esc(a.nome)}</h3>
-      ${modo === 'combate' ? `<div class="nums"><div><span>Entrada</span><b class="ent">${brl(a.entrada)}</b></div><div><span>Prêmio</span><b>${brl(a.premio)}</b></div></div>
-      <div class="nota">Comissão ${brl(a.comissao)} · perda máxima: a sua entrada</div>` : '<div class="nums"><div><span>Treino</span><b>Grátis</b></div></div><div class="nota">Rival do seu nível. Não vale dinheiro.</div>'}
+      ${modo === 'combate' ? `<div class="nums"><div><span>Entrada</span><b class="ent">${arHtml(a.entrada)}</b></div><div><span>Prêmio</span><b>${arHtml(a.premio)}</b></div></div>
+      <div class="nota">Comissão ${ar(a.comissao)} · perda máxima: a sua entrada</div>` : '<div class="nums"><div><span>Treino</span><b>Grátis</b></div></div><div class="nota">Rival do seu nível. Não vale dinheiro.</div>'}
       <button class="btn ${pode ? 'btn-ouro' : 'btn-sec'}" data-arena="${a.id}" style="margin-top:10px">${modo === 'treino' ? 'Treinar aqui' : pode ? 'Entrar no duelo' : 'Depositar para jogar'}</button></div>`
   }).join('')
   $$('[data-arena]').forEach((b) => (b.onclick = () => {
@@ -126,7 +129,7 @@ function fimPartida(m) {
   r.classList.toggle('perdeu', !venci && !empate)
   $('#res-tit').textContent = empate ? 'EMPATE' : venci ? 'VOCÊ VENCEU' : 'NÃO FOI DESSA VEZ'
   $('#res-txt').textContent = partida.modo === 'treino' ? (venci ? 'Bom treino. Já dá para encarar a Arena de Combate.' : 'Treino é para isso. Troque a marcha perto de 5.000 rpm e segure a tração.')
-    : empate ? 'Empate: a entrada voltou inteira para o seu saldo.' : venci ? `${brl(m.premio)} caíram no seu saldo.` : 'Você perdeu a entrada desta partida. Treine e volte mais forte.'
+    : empate ? 'Empate: a entrada voltou inteira para o seu saldo.' : venci ? `${ar(m.premio)} caíram no seu saldo.` : 'Você perdeu a entrada desta partida. Treine e volte mais forte.'
   ws && ws.close(); ws = null
   carregarConta()
 }
@@ -179,13 +182,13 @@ function somRpm(rpm, acelerando) {
 // ---------------- carteira ----------------
 async function carregarCarteira() {
   const j = await api('GET', '/api/carteira')
-  $('#s-disp').textContent = brl(j.saldo.disponivel); $('#s-res').textContent = brl(j.saldo.reservado); $('#s-saq').textContent = brl(j.saldo.saque)
-  $('#saldo-topo').textContent = brl(j.saldo.disponivel)
+  $('#s-disp').innerHTML = arHtml(j.saldo.disponivel); $('#s-res').innerHTML = arHtml(j.saldo.reservado); $('#s-saq').innerHTML = arHtml(j.saldo.saque)
+  $('#saldo-topo').innerHTML = arHtml(j.saldo.disponivel)
   const est = { pendente: 'aguardando confirmação', confirmado: 'confirmado', cancelado: 'cancelado', pago: 'pago', recusado: 'recusado' }
   const linhas = [
-    ...j.depositos.filter((d) => d.estado === 'pendente').map((d) => `<div class="item"><span>Depósito ${brl(d.valor)} · ${est[d.estado]}</span><b>⏳</b></div>`),
-    ...j.saques.filter((s) => s.estado === 'pendente').map((s) => `<div class="item"><span>Saque ${brl(s.valor)} · em análise</span><b>⏳</b></div>`),
-    ...j.extrato.map((l) => `<div class="item"><span>${new Date(l.criado * 1000).toLocaleString('pt-BR')} · ${esc(l.descricao)}</span><b class="${l.valor >= 0 ? 'mais' : 'menos'}">${l.valor >= 0 ? '+' : '−'} ${brl(Math.abs(l.valor))}</b></div>`),
+    ...j.depositos.filter((d) => d.estado === 'pendente').map((d) => `<div class="item"><span>Compra de ${ar(d.valor)} (${brl(d.valor)} no Pix) · ${est[d.estado]}</span><b>⏳</b></div>`),
+    ...j.saques.filter((s) => s.estado === 'pendente').map((s) => `<div class="item"><span>Saque de ${ar(s.valor)} → ${brl(s.valor)} no Pix · em análise</span><b>⏳</b></div>`),
+    ...j.extrato.map((l) => `<div class="item"><span>${new Date(l.criado * 1000).toLocaleString('pt-BR')} · ${esc(l.descricao)}</span><b class="${l.valor >= 0 ? 'mais' : 'menos'}">${l.valor >= 0 ? '+' : '−'} ${ar(Math.abs(l.valor))}</b></div>`),
   ]
   $('#extrato').innerHTML = linhas.join('') || '<p class="mut">Nenhum movimento ainda.</p>'
 }
@@ -196,7 +199,7 @@ $('#f-dep').onsubmit = async (e) => {
     const d = await api('POST', '/api/deposito', { valor: +$('#dep-valor').value })
     const box = $('#dep-info')
     box.hidden = false
-    box.innerHTML = `<b>Depósito de ${brl(d.valor)} criado</b><p class="mut" style="margin:6px 0">${esc(d.instrucoes)}</p>${d.copia_cola ? `<code>${esc(d.copia_cola)}</code><button type="button" class="btn btn-sec" id="copiar">Copiar chave Pix</button>` : ''}
+    box.innerHTML = `<b>Pix de ${brl(d.valor)} → ${ar(d.valor)} na sua carteira</b><p class="mut" style="margin:6px 0">${esc(d.instrucoes)}</p>${d.copia_cola ? `<code>${esc(d.copia_cola)}</code><button type="button" class="btn btn-sec" id="copiar">Copiar chave Pix</button>` : ''}
       <button type="button" class="btn btn-ouro" id="paguei" style="margin-left:6px">Já paguei</button>`
     $('#copiar') && ($('#copiar').onclick = () => navigator.clipboard.writeText(d.copia_cola).then(() => toast('Chave copiada.')))
     $('#paguei').onclick = async () => { await api('POST', `/api/deposito/${d.id}/paguei`); toast('Obrigado! Assim que o Pix for confirmado, o saldo aparece aqui.'); carregarCarteira() }

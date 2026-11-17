@@ -93,3 +93,6 @@ input,select{background:var(--bg2);border:1px solid var(--bd);border-radius:12px
   .painel-ctrl{grid-template-columns:1fr 1fr}.btn-acel{grid-column:1/-1;min-height:110px}
   .palco3d{height:46vh}.resultado h2{font-size:60px}.contagem{font-size:120px}
 }
+
+/* Arroba (@): moeda do jogo, 1 @ = R$ 1,00 */
+.arroba{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.arroba i{font-style:normal;display:inline-grid;place-items:center;width:1.15em;height:1.15em;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe9a8,#c49a46 55%,#7a5a22);color:#2a1d08;font-weight:900;font-size:.78em;box-shadow:0 0 0 1px rgba(255,220,140,.5),0 2px 6px rgba(0,0,0,.45)}

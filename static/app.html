@@ -15,7 +15,7 @@
 <body>
 <header class="barra">
   <a class="marca" href="/"><span class="titulo">Arena Bruta</span></a>
-  <div class="saldo-topo" id="saldo-topo" title="Saldo disponível">R$ 0,00</div>
+  <div class="saldo-topo" id="saldo-topo" title="Saldo disponível em arrobas (1 @ = R$ 1,00)">0,00 @</div>
   <nav class="vistas" role="tablist">
     <button data-v="lobby" class="on">Arenas</button><button data-v="carteira">Carteira</button><button data-v="ranking">Ranking</button><button data-v="perfil">Perfil</button>
   </nav>
@@ -55,14 +55,14 @@
   <!-- CARTEIRA -->
   <section class="vista" id="v-carteira">
     <div class="cab"><h1 class="bebas">Carteira</h1></div>
-    <div class="saldos"><div><small>Disponível</small><b id="s-disp">R$ 0,00</b></div><div><small>Em partida</small><b id="s-res">R$ 0,00</b></div><div><small>Saque em análise</small><b id="s-saq">R$ 0,00</b></div></div>
+    <div class="saldos"><div><small>Disponível</small><b id="s-disp">0,00 @</b></div><div><small>Em partida</small><b id="s-res">0,00 @</b></div><div><small>Saque em análise</small><b id="s-saq">0,00 @</b></div></div>
     <div class="duas">
-      <form class="card" id="f-dep"><h3>Depositar pelo Pix</h3><p class="mut">A partir de R$ 10,00. O saldo entra quando o Pix é confirmado.</p>
+      <form class="card" id="f-dep"><h3>Comprar arrobas pelo Pix</h3><p class="mut"><b>1 @ = R$ 1,00.</b> A partir de R$ 10 (10 @, o lance mínimo). Deposite R$ 500 e vá gastando as suas 500 @ partida a partida. As arrobas entram quando o Pix é confirmado.</p>
         <div class="valores"><button type="button" data-v="10">R$ 10</button><button type="button" data-v="20">R$ 20</button><button type="button" data-v="50">R$ 50</button><button type="button" data-v="100">R$ 100</button></div>
-        <label>Valor (R$)<input id="dep-valor" type="number" min="10" step="1" value="20"></label><button class="btn btn-ouro">Gerar depósito</button>
+        <label>Valor (R$)<input id="dep-valor" type="number" min="10" step="1" value="20"></label><button class="btn btn-ouro">Gerar Pix e comprar arrobas</button>
         <div id="dep-info" class="pix" hidden></div></form>
-      <form class="card" id="f-saq"><h3>Sacar</h3><p class="mut">Cai na chave Pix cadastrada no seu nome (Perfil). Sem precisar jogar de novo.</p>
-        <label>Valor (R$)<input id="saq-valor" type="number" min="10" step="0.01" required></label><button class="btn btn-sec">Pedir saque</button><p id="saq-msg" class="mut"></p></form>
+      <form class="card" id="f-saq"><h3>Sacar arrobas</h3><p class="mut">Suas arrobas viram reais (1 @ = R$ 1,00) e caem na chave Pix cadastrada no seu nome (Perfil). Sem precisar jogar de novo.</p>
+        <label>Arrobas para sacar (@)<input id="saq-valor" type="number" min="10" step="0.01" required></label><button class="btn btn-sec">Sacar arrobas para o Pix</button><p id="saq-msg" class="mut"></p></form>
     </div>
     <h3 style="margin-top:28px">Extrato</h3><div id="extrato" class="extrato"></div>
   </section>

@@ -56,8 +56,8 @@ export function criarCena(canvas, opcoes = {}) {
     for (let x = -36; x <= 36; x += 4) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.6, 0.25), madeira); p.position.set(x, 0.8, z); p.castShadow = true; cena.add(p) }
     for (const y of [0.55, 1.25]) { const t = new THREE.Mesh(new THREE.BoxGeometry(72, 0.18, 0.12), madeira); t.position.set(0, y, z); cena.add(t) }
   }
-  const A = criarCaminhonete(opcoes.modeloA || 'touro3500', opcoes.corA ?? COR.ouro, false)   // a da esquerda puxa para a esquerda (pos > 0)
-  const B = criarCaminhonete(opcoes.modeloB || 'brutus2500', opcoes.corB ?? COR.militar, true)
+  const A = criarCaminhonete(opcoes.modeloA || 'fam3500', opcoes.corA ?? COR.ouro, false)   // a da esquerda puxa para a esquerda (pos > 0)
+  const B = criarCaminhonete(opcoes.modeloB || 's150', opcoes.corB ?? COR.militar, true)
   cena.add(A.g, B.g)
   // corrente: elos alternados entre os engates
   const elos = []
