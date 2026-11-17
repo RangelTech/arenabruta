@@ -275,7 +275,7 @@ function montarArena() {
   const meu = conta?.garagem || {}, dele = partida.rival?.garagem || {}
   const souA = lado === 'a'
   const gA = souA ? meu : dele, gB = souA ? dele : meu
-  cena?.trocar?.({ modeloA: modeloDe(gA) || 'fam3500', corA: corInt(gA.cor, 0xc49a46), modeloB: modeloDe(gB) || 's150', corB: corInt(gB.cor, 0x334532), piso: partida.cenario?.piso })
+  cena?.trocar?.({ modeloA: modeloDe(gA) || 'fam3500', corA: corInt(gA.cor, 0xc49a46), modeloB: modeloDe(gB) || 's150', corB: corInt(gB.cor, 0x334532), piso: partida.cenario?.piso, cenario: partida.cenario?.id })
   const card = (titulo, nome, g, a) => `<div class="attr"><small>${titulo}</small><b>${esc(nome)}</b><span class="carro">${esc(MODELOS[modeloDe(g) || 'fam3500'].nome)}</span>
     <ul><li>Pneu <b>${esc(NOME_PNEU[a?.pneu] || '—')}</b></li><li>Calibragem <b>${a?.psi ?? '—'} psi</b></li><li>Relação <b>${esc(NOME_REL[a?.relacao] || '—')}</b></li><li>Mapa <b>${esc(NOME_MAPA[a?.mapa] || '—')}</b></li></ul></div>`
   const c = partida.cenario || {}

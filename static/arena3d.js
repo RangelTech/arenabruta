@@ -27,35 +27,38 @@ function texturaChao() {
 export function criarCena(canvas, opcoes = {}) {
   const modo = opcoes.modo || 'jogo'
   const reduzir = matchMedia('(prefers-reduced-motion: reduce)').matches
-  const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false })
+  const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })   // fundo = foto do cenário (CSS) atrás do 3D
   r.setPixelRatio(Math.min(2, devicePixelRatio || 1))
   r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap
   r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05
   const cena = new THREE.Scene()
   cena.environment = ambienteMetal(r)  // reflexo para o cromado e a pintura metálica
-  cena.background = new THREE.Color(0x2a1a12)
-  cena.fog = new THREE.Fog(0x3a2418, 30, 95)
-  // céu de pôr do sol (esfera com gradiente)
-  const ceuMat = new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: {}, vertexShader: 'varying vec3 p; void main(){ p = position; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-    fragmentShader: 'varying vec3 p; void main(){ float h = normalize(p).y; vec3 c = mix(vec3(0.95,0.55,0.22), vec3(0.16,0.09,0.12), smoothstep(-0.05,0.45,h)); c = mix(c, vec3(1.0,0.78,0.42), smoothstep(0.0,0.06,0.06-abs(h-0.02))*0.6); gl_FragColor = vec4(c,1.0); }' })
-  cena.add(new THREE.Mesh(new THREE.SphereGeometry(200, 32, 16), ceuMat))
+  // cenário (spec 46 §4): uma foto grande de fundo por arena; o 3D desenha só o chão perto das caminhonetes, sumindo em degradê
+  // cor do chão 3D e luz de cada cenário, para casar com a foto (noite = luz baixa)
+  const CENA = { treino: [0x8a5a3a, 1.0], peao: [0xb8643c, 1.15], cowboy: [0xa07452, 1.0], bruto: [0x5e5040, 0.6], fazendeiro: [0x9a7a58, 0.62],
+                 barao: [0xe2c493, 0.95], rei: [0x8e5234, 0.6] }
+  let chao = null, sol = null
+  const fundo = (id) => {
+    canvas.style.background = `#1a120c url(/s/img/cen_${id}.webp) center 58%/cover`
+    const c = CENA[id]
+    if (c && chao) { chao.material.color.setHex(c[0]); sol.intensity = 2.4 * c[1]; ceuLuz.intensity = 1.15 * c[1] }
+  }
   const cam = new THREE.PerspectiveCamera(modo === 'heroi' ? 34 : 40, 1, 0.1, 400)
-  cena.add(new THREE.HemisphereLight(0xffe2b8, 0x4a3020, 1.15))
+  const ceuLuz = new THREE.HemisphereLight(0xffe2b8, 0x4a3020, 1.15); cena.add(ceuLuz)
   const contra = new THREE.DirectionalLight(0xff9a4a, 1.1); contra.position.set(10, 8, -30); cena.add(contra)  // luz de contorno do pôr do sol
-  const sol = new THREE.DirectionalLight(0xffc27a, 2.4)
+  sol = new THREE.DirectionalLight(0xffc27a, 2.4)
   sol.position.set(-22, 26, 28); sol.castShadow = true
   sol.shadow.mapSize.set(2048, 2048); Object.assign(sol.shadow.camera, { left: -30, right: 30, top: 20, bottom: -20, far: 120 })
   cena.add(sol)
-  const chao = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), new THREE.MeshStandardMaterial({ map: texturaChao(), roughness: 1 }))
+  const degrade = (() => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 30, 128, 128, 128)
+    gr.addColorStop(0, '#fff'); gr.addColorStop(0.55, '#fff'); gr.addColorStop(1, '#000'); g.fillStyle = gr; g.fillRect(0, 0, 256, 256); return new THREE.CanvasTexture(c) })()
+  chao = new THREE.Mesh(new THREE.CircleGeometry(24, 64), new THREE.MeshStandardMaterial({ map: texturaChao(), roughness: 1, transparent: true, opacity: 0.82, alphaMap: degrade, depthWrite: false }))
+  chao.scale.set(1.25, 0.55, 1)   // elipse: mais largo que fundo, para casar com a perspectiva da foto
   chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; cena.add(chao)
   // faixa central (linha de vitória dos dois lados) e cercas de rodeio
   const linha = (x, cor) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 9), new THREE.MeshStandardMaterial({ color: cor, emissive: cor, emissiveIntensity: 0.35 })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.02, 0); cena.add(m) }
   linha(0, 0xe9dbc4); linha(-10, COR.ouro); linha(10, COR.ouro)
-  const madeira = new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.9 })
-  for (const z of [-7.5]) {  // só a cerca do fundo: a da frente tapava a cena
-    for (let x = -36; x <= 36; x += 4) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.6, 0.25), madeira); p.position.set(x, 0.8, z); p.castShadow = true; cena.add(p) }
-    for (const y of [0.55, 1.25]) { const t = new THREE.Mesh(new THREE.BoxGeometry(72, 0.18, 0.12), madeira); t.position.set(0, y, z); cena.add(t) }
-  }
+  fundo(opcoes.cenario || (modo === 'heroi' ? 'rei' : 'treino'))
   let A = criarCaminhonete(opcoes.modeloA || 'fam3500', opcoes.corA ?? COR.ouro, false)   // a da esquerda puxa para a esquerda (pos > 0)
   let B = criarCaminhonete(opcoes.modeloB || 's150', opcoes.corB ?? COR.militar, true)
   cena.add(A.g, B.g)
@@ -66,7 +69,7 @@ export function criarCena(canvas, opcoes = {}) {
     if (o.modeloA || o.corA != null) { cena.remove(A.g); A = criarCaminhonete(o.modeloA || 'fam3500', o.corA ?? COR.ouro, false); cena.add(A.g) }
     if (o.modeloB || o.corB != null) { cena.remove(B.g); B = criarCaminhonete(o.modeloB || 's150', o.corB ?? COR.militar, true); cena.add(B.g) }
     const p = PISO[o.piso]
-    if (p) { chao.material.color.setHex(p[0]).multiplyScalar(1.6); cena.fog.color.setHex(p[1]); cena.background.setHex(p[1]) }
+    if (o.cenario) fundo(o.cenario)
   }
   if (opcoes.piso) trocar({ piso: opcoes.piso })
   // corrente: elos alternados entre os engates
@@ -91,7 +94,7 @@ export function criarCena(canvas, opcoes = {}) {
     return { pts, n, vida: new Float32Array(n), base: new Float32Array(n * 3) }
   }
   const poeiraA = nuvem(0xc9a07a, 160, 0.55), poeiraB = nuvem(0xc9a07a, 160, 0.55)
-  const fumacaA = nuvem(0x1a1a1a, 70, 0.9), fumacaB = nuvem(0x1a1a1a, 70, 0.9)
+  const fumacaA = nuvem(0x8a8580, 70, 0.6), fumacaB = nuvem(0x8a8580, 70, 0.6)
 
   let estado = { pos: 0, a: { rpm: 900, forca: 0, acel: 0, temp: 0 }, b: { rpm: 900, forca: 0, acel: 0, temp: 0 } }
   let posVis = 0, t0 = performance.now(), raf = 0, sem = 0

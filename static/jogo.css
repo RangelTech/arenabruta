@@ -157,3 +157,14 @@ input,select{background:var(--bg2);border:1px solid var(--bd);border-radius:12px
 .gar-psi input{width:100%;accent-color:var(--ouro)}
 .gar-rodape{grid-area:rod;display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:flex-end}.gar-rodape #gar-resumo{margin-right:auto}
 @media (max-width:900px){.gar{grid-template-columns:1fr;grid-template-areas:"palco" "abas" "ops" "graf" "rod"}.gb{grid-template-columns:120px 1fr}}
+
+/* Garagem v2: galpão agro ao fundo (foto), nome com cantoneiras no canto, palco maior */
+.gar-palco{height:clamp(360px,62vh,640px);background:#0c0b0a url(/s/img/galpao.webp) center 62%/cover}
+.gar-palco::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.35),transparent 30%,transparent 70%,rgba(0,0,0,.55)),radial-gradient(ellipse at 50% 60%,transparent 45%,rgba(0,0,0,.45))}
+.gar-palco canvas{z-index:1}.gar-seta,.gar-nome{z-index:2}
+.gar-nome{top:18px;right:22px;left:auto;bottom:auto;text-align:right;padding:10px 16px;
+  background:linear-gradient(currentColor,currentColor) 0 0/16px 2px,linear-gradient(currentColor,currentColor) 0 0/2px 16px,linear-gradient(currentColor,currentColor) 100% 0/16px 2px,linear-gradient(currentColor,currentColor) 100% 0/2px 16px,
+             linear-gradient(currentColor,currentColor) 0 100%/16px 2px,linear-gradient(currentColor,currentColor) 0 100%/2px 16px,linear-gradient(currentColor,currentColor) 100% 100%/16px 2px,linear-gradient(currentColor,currentColor) 100% 100%/2px 16px;
+  background-repeat:no-repeat;color:rgba(255,255,255,.85)}
+.gar-nome small{color:var(--ouro2);font-weight:700}
+.gar-nome b{font-size:clamp(36px,5vw,66px);letter-spacing:.12em;text-transform:uppercase;color:#fff;-webkit-text-stroke:1px rgba(0,0,0,.35)}

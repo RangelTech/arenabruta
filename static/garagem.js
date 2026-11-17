@@ -19,20 +19,19 @@ const OPCOES = {
   mapa: [['torque', 'Torque', 'força embaixo', 'Entrega tudo no giro baixo. Esticar demais esquenta o motor mais cedo.'],
     ['potencia', 'Potência', 'força em cima', 'Acorda no giro alto e aguenta mais rotação antes de esquentar.']],
 }
-const ABAS = [['modelo', 'Caminhonete'], ['pintura', 'Pintura'], ['pneu', 'Pneu'], ['psi', 'Calibragem'], ['relacao', 'Relação'], ['mapa', 'Mapa do motor']]
+const ABAS = [['modelo', 'Máquina'], ['pintura', 'Pintura'], ['pneu', 'Pneu'], ['psi', 'Calibragem'], ['relacao', 'Relação'], ['mapa', 'Mapa do motor']]
 const descPsi = (p) => p <= 21 ? 'Pneu murcho: muita área de contato, flanco trabalhando e resposta macia.' : p <= 33 ? 'Pressão de equilíbrio: contato e firmeza na medida.' : 'Pneu duro: pouca área no chão, resposta seca e rápida.'
 
 let estado = null, palco = null, graf = null
 
 // ---------------- palco 3D: a caminhonete no centro, girando ----------------
 function criarPalco(canvas) {
-  const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false })
+  const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true })
   r.setPixelRatio(Math.min(2, devicePixelRatio || 1)); r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true
-  const cena = new THREE.Scene(); cena.background = new THREE.Color(0x0c0b0a); cena.environment = ambienteMetal(r)
-  cena.fog = new THREE.Fog(0x0c0b0a, 14, 34)
-  const chao = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshStandardMaterial({ color: 0x1a1714, metalness: 0.6, roughness: 0.35 }))
+  const cena = new THREE.Scene(); cena.environment = ambienteMetal(r)   // fundo transparente: atrás fica a foto do galpão
+  const chao = new THREE.Mesh(new THREE.CircleGeometry(9, 64), new THREE.ShadowMaterial({ opacity: 0.6 }))   // só a sombra no chão da foto
   chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; cena.add(chao)
-  const anel = new THREE.Mesh(new THREE.RingGeometry(6.9, 7.05, 96), new THREE.MeshBasicMaterial({ color: 0xc49a46 })); anel.rotation.x = -Math.PI / 2; anel.position.y = 0.01; cena.add(anel)
+  const anel = new THREE.Mesh(new THREE.RingGeometry(4.6, 4.68, 96), new THREE.MeshBasicMaterial({ color: 0xe2c27e, transparent: true, opacity: 0.55 })); anel.rotation.x = -Math.PI / 2; anel.position.y = 0.01; cena.add(anel)
   cena.add(new THREE.HemisphereLight(0xfff2dd, 0x221a12, 0.7))
   const topo = new THREE.SpotLight(0xffffff, 260, 30, 0.6, 0.5); topo.position.set(0, 12, 2); topo.castShadow = true; topo.shadow.mapSize.set(2048, 2048); cena.add(topo)
   const lado = new THREE.DirectionalLight(0xffc27a, 1.4); lado.position.set(-8, 4, 6); cena.add(lado)
@@ -143,7 +142,7 @@ function desenharAba() {
   const a = estado.aba, box = $('#gar-opcoes')
   document.querySelectorAll('.gar-abas button').forEach((b) => b.classList.toggle('on', b.dataset.aba === a))
   if (a === 'modelo') {
-    box.innerHTML = `<div class="gar-trilho">${IDS.map((k) => `<button class="gar-card ${k === estado.modelo ? 'on' : ''}" data-modelo="${k}"><b>${esc(MODELOS[k].nome)}</b><small>${TEM_PINTURA[k] === false ? 'cor de fábrica' : 'pintura livre'}</small></button>`).join('')}</div>`
+    box.innerHTML = `<div class="gar-trilho">${IDS.map((k) => `<button class="gar-card ${k === estado.modelo ? 'on' : ''}" data-modelo="${k}"><b>${esc(MODELOS[k].nome)}</b><small>4x4 · ${TEM_PINTURA[k] === false ? 'cor de fábrica' : 'pintura livre'}</small></button>`).join('')}</div>`
   } else if (a === 'pintura') {
     const pode = TEM_PINTURA[estado.modelo] !== false
     box.innerHTML = `<div class="gar-trilho">${CORES.map(([c, n]) => `<button class="gar-card cor ${c === estado.cor ? 'on' : ''}" data-cor="${c}" ${pode ? '' : 'disabled'}><i style="background:${c}"></i><b>${esc(n)}</b></button>`).join('')}
@@ -169,7 +168,7 @@ function ligarAba() {
 function trocarCarro() {
   palco.mostrar(estado.modelo, parseInt(estado.cor.slice(1), 16))
   const i = IDS.indexOf(estado.modelo)
-  $('#gar-nome').textContent = MODELOS[estado.modelo].nome; $('#gar-pos').textContent = `${i + 1}/${IDS.length}`
+  $('#gar-nome').textContent = MODELOS[estado.modelo].nome; $('#gar-pos').textContent = `4x4 · ${i + 1}/${IDS.length}`
 }
 function resumo() {
   const a = estado.acerto, n = (t, k) => OPCOES[t].find((o) => o[0] === k)?.[1]

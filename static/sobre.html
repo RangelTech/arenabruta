@@ -13,7 +13,8 @@ table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}th,td{b
 <h1 class="titulo">Sobre a Arena Bruta</h1>
 <p>A Arena Bruta é um jogo de habilidade da Rangel Tech: duelos de cabo de guerra de caminhonete, 1 contra 1, sem sorte no meio. Proibido para menores de 18 anos.</p>
 <p><a href="/">Voltar ao início</a> · <a href="/regulamento">Regulamento</a></p>
-<section id="creditos-3d"><h2>Créditos dos modelos 3D</h2><p>As caminhonetes do jogo são baseadas em modelos publicados no Sketchfab pelos autores abaixo (licenças CC Attribution 4.0 e Sketchfab Free Standard). Os nomes usados no jogo são fictícios.</p><ul id="lista-creditos"></ul></section>
+<section id="marcas"><h2>Marcas</h2><p>RAM, Jeep e Fiat (Stellantis), Ford, Toyota, Volkswagen, Chevrolet e Cadillac (General Motors), Mitsubishi, Nissan e Land Rover são marcas registradas dos respectivos fabricantes. Os veículos aparecem no jogo apenas como referência visual; a Arena Bruta não é patrocinada, endossada nem afiliada a essas empresas, e o desempenho no jogo é igual para todos os veículos.</p></section>
+<section id="creditos-3d"><h2>Créditos dos modelos 3D</h2><p>As caminhonetes do jogo são baseadas em modelos publicados no Sketchfab pelos autores abaixo (licenças CC Attribution 4.0 e Sketchfab Free Standard). </p><ul id="lista-creditos"></ul></section>
 </main>
 <script>fetch('/s/modelos/creditos.json').then((r) => r.json()).then((c) => { document.getElementById('lista-creditos').innerHTML = Object.values(c).map((m) => `<li><a href="${m.url}" target="_blank" rel="noopener">${m.modelo.replace(/</g, '&lt;')}</a> por <a href="${m.perfil}" target="_blank" rel="noopener">${m.autor.replace(/</g, '&lt;')}</a> (${m.licenca})</li>`).join('') }).catch(() => {})</script>
 </body>
