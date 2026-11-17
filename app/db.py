@@ -52,6 +52,10 @@ class Banco:
         self.con.row_factory = sqlite3.Row
         self.con.execute("PRAGMA journal_mode=WAL")
         self.con.executescript(ESQUEMA)
+        # v0.1.4: "visto" = última vez que quem espera na fila consultou a partida (fila fantasma não pareia)
+        if "visto" not in [r[1] for r in self.con.execute("PRAGMA table_info(partidas)")]:
+            self.con.execute("ALTER TABLE partidas ADD COLUMN visto REAL NOT NULL DEFAULT 0")
+            self.con.commit()
 
     @contextmanager
     def tx(self):

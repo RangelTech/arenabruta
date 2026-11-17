@@ -173,3 +173,39 @@ def test_paginas_abrem(amb):
     c = TestClient(app)
     for p in ("/", "/app", "/regulamento", "/admin", "/admin/arena", "/health", "/api/arenas", "/api/ranking"):
         assert c.get(p).status_code == 200, p
+
+
+def test_fila_fantasma_nao_pareia_e_abandono_devolve(amb, monkeypatch):
+    """Quem fechou a página na fila não vira adversário fantasma; a vaga abandonada é cancelada com a entrada devolvida."""
+    import app.main as M
+    app, pessoa, adm, dep = amb
+    a, b = pessoa("a@x.com", "Peao1"), pessoa("b@x.com", "Peao2")
+    dep(a, 10)
+    dep(b, 10)
+    pa = a.post("/api/fila", json={"arena": "peao"}).json()
+    monkeypatch.setattr(M, "VIVO_S", -1)  # "a" parou de consultar a fila (fechou a página)
+    pb = b.post("/api/fila", json={"arena": "peao"}).json()
+    assert pb["id"] != pa["id"] and pb["estado"] == "fila"
+    monkeypatch.setattr(M, "ABANDONO_S", -1)  # passou o tempo de abandono: a próxima entrada na fila limpa as vagas velhas
+    c = pessoa("c@x.com", "Peao3")
+    dep(c, 10)
+    c.post("/api/fila", json={"arena": "peao"})
+    assert a.get(f"/api/partida/{pa['id']}").json()["estado"] == "cancelada"
+    assert a.get("/api/carteira").json()["saldo"]["disponivel"] == 1000
+    assert adm.get("/api/painel/arena").json()["invariantes"]["soma_zero"]
+
+
+def test_pvp_comeca_mesmo_com_adversario_ausente(amb, monkeypatch):
+    """PvP pareado em que um lado não conecta: começa depois da espera, com o carro ausente parado (regra de queda)."""
+    import app.main as M
+    monkeypatch.setattr(M, "ESPERA_ADVERSARIO_S", 0.2)
+    app, pessoa, adm, dep = amb
+    a, b = pessoa("a@x.com", "Peao1"), pessoa("b@x.com", "Peao2")
+    dep(a, 10)
+    dep(b, 10)
+    pa = a.post("/api/fila", json={"arena": "peao"}).json()
+    pb = b.post("/api/fila", json={"arena": "peao"}).json()
+    assert pa["id"] == pb["id"]
+    fim = jogar(a, pa["id"], [{"tracao": 72, "acel": 1}])  # "b" nunca conecta
+    assert fim["vencedor"] == "a"
+    assert adm.get("/api/painel/arena").json()["invariantes"]["soma_zero"]

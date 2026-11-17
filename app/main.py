@@ -29,6 +29,9 @@ log = logging.getLogger("arenabruta")
 COOKIE = "arenabruta_s"
 ESTATICO = Path(__file__).resolve().parent.parent / "static"
 ESPERA_HUMANO_S = 6         # sem adversário humano nesse tempo -> competidor da casa
+VIVO_S = 10                 # só pareia com quem consultou a fila nesse tempo (quem fechou a página não vira fantasma)
+ABANDONO_S = 60             # vaga na fila sem consulta há mais que isso: cancelada e entrada devolvida
+ESPERA_ADVERSARIO_S = 20    # PvP: adversário que não conecta nesse tempo -> começa assim mesmo (carro dele parado, regra publicada)
 DEP_MIN, DEP_MAX = 1000, 500000
 SAQUE_MIN = 1000
 AJUSTES_PADRAO = {"teto_exposicao": 100000, "teto_perda_dia": 30000, "teto_ganho_jogador_dia": 10000, "bots_combate": 1}
@@ -302,9 +305,10 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
                           ("cabo-de-guerra", arena, "treino", 0, u["id"], nivel, "pronta", agora())).lastrowid
             return vista_partida(db.um("SELECT * FROM partidas WHERE id=?", (pid,)), u["id"])
         entrada = ledger.ARENAS[arena][1]
-        # procura alguém esperando na mesma arena (PvP primeiro, sempre)
-        alvo = db.um("SELECT * FROM partidas WHERE modo='combate' AND arena=? AND estado='fila' AND jog_b IS NULL AND jog_a<>? ORDER BY criado LIMIT 1",
-                     (arena, u["id"]))
+        limpar_abandonos()
+        # procura alguém esperando na mesma arena (PvP primeiro, sempre), e que esteja mesmo esperando agora
+        alvo = db.um("SELECT * FROM partidas WHERE modo='combate' AND arena=? AND estado='fila' AND jog_b IS NULL AND jog_a<>? AND MAX(visto, criado)>? ORDER BY criado LIMIT 1",
+                     (arena, u["id"], agora() - VIVO_S))
         if alvo:
             try:
                 ledger.reservar(db, u["id"], entrada, alvo["id"])
@@ -312,8 +316,8 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
                 raise HTTPException(402, "saldo insuficiente para esta arena")
             db.exec("UPDATE partidas SET jog_b=?, estado='pronta' WHERE id=? AND jog_b IS NULL", (u["id"], alvo["id"]))
             return vista_partida(db.um("SELECT * FROM partidas WHERE id=?", (alvo["id"],)), u["id"])
-        pid = db.exec("INSERT INTO partidas(jogo,arena,modo,entrada,jog_a,estado,criado) VALUES(?,?,?,?,?,?,?)",
-                      ("cabo-de-guerra", arena, "combate", entrada, u["id"], "fila", agora())).lastrowid
+        pid = db.exec("INSERT INTO partidas(jogo,arena,modo,entrada,jog_a,estado,criado,visto) VALUES(?,?,?,?,?,?,?,?)",
+                      ("cabo-de-guerra", arena, "combate", entrada, u["id"], "fila", agora(), agora())).lastrowid
         try:
             ledger.reservar(db, u["id"], entrada, pid)
         except ledger.SaldoInsuficiente:
@@ -327,6 +331,8 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
         p = db.um("SELECT * FROM partidas WHERE id=? AND (jog_a=? OR jog_b=?)", (pid, u["id"], u["id"]))
         if not p:
             raise HTTPException(404, "partida não encontrada")
+        if p["estado"] == "fila" and p["jog_a"] == u["id"]:
+            db.exec("UPDATE partidas SET visto=? WHERE id=?", (agora(), pid))
         # ninguém apareceu: entra um competidor da casa de nível fixo (se os tetos deixarem)
         if p["estado"] == "fila" and agora() - p["criado"] >= ESPERA_HUMANO_S:
             ok, motivo = pode_bot(p["jog_a"], p["entrada"])
@@ -335,6 +341,12 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
                 db.exec("UPDATE partidas SET bot_nivel=?, estado='pronta' WHERE id=? AND estado='fila'", (nivel, pid))
                 p = db.um("SELECT * FROM partidas WHERE id=?", (pid,))
         return vista_partida(p, u["id"])
+
+    def limpar_abandonos() -> None:
+        for p in db.todos("SELECT * FROM partidas WHERE estado='fila' AND MAX(visto, criado)<?", (agora() - ABANDONO_S,)):
+            db.exec("UPDATE partidas SET estado='cancelada', fim=? WHERE id=? AND estado='fila'", (agora(), p["id"]))
+            if p["entrada"]:
+                ledger.devolver(db, p["jog_a"], p["entrada"], p["id"], "saiu da página na fila")
 
     @app.post("/api/partida/{pid}/sair")
     def sair_fila(pid: int, request: Request):
@@ -386,6 +398,17 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
 
         def pronto_para_comecar(self) -> bool:
             return "a" in self.ws and (self.p["bot_nivel"] or "b" in self.ws)
+
+        async def comecar(self):
+            # bot ou os dois conectados: começa na hora; PvP com um ausente: espera até ESPERA_ADVERSARIO_S e começa
+            # assim mesmo (quem não conectou fica com o carro parado, como na regra de queda publicada)
+            t0 = time.monotonic()
+            while not self.pronto_para_comecar() and time.monotonic() - t0 < ESPERA_ADVERSARIO_S:
+                await asyncio.sleep(0.25)
+            if not self.ws:
+                ao_vivo.pop(self.p["id"], None)
+                return
+            await self.rodar()
 
         async def rodar(self):
             db.exec("UPDATE partidas SET estado='jogando' WHERE id=?", (self.p["id"],))
@@ -467,8 +490,8 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
             ao = ao_vivo[pid] = Ao(p)
         ao.ws[lado] = ws
         await ws.send_text(json.dumps({"t": "ok", "lado": lado, "partida": vista_partida(p, u["id"])}))
-        if ao.pronto_para_comecar() and not ao.tarefa:
-            ao.tarefa = asyncio.create_task(ao.rodar())
+        if not ao.tarefa:
+            ao.tarefa = asyncio.create_task(ao.comecar())
         try:
             while True:
                 msg = json.loads(await ws.receive_text())
