@@ -62,7 +62,7 @@
         <label>Valor (R$)<input id="dep-valor" type="number" min="10" step="1" value="20"></label><button class="btn btn-ouro">Gerar depósito</button>
         <div id="dep-info" class="pix" hidden></div></form>
       <form class="card" id="f-saq"><h3>Sacar</h3><p class="mut">Cai na chave Pix cadastrada no seu nome (Perfil). Sem precisar jogar de novo.</p>
-        <label>Valor (R$)<input id="saq-valor" type="number" min="10" step="0.01"></label><button class="btn btn-sec">Pedir saque</button><p id="saq-msg" class="mut"></p></form>
+        <label>Valor (R$)<input id="saq-valor" type="number" min="10" step="0.01" required></label><button class="btn btn-sec">Pedir saque</button><p id="saq-msg" class="mut"></p></form>
     </div>
     <h3 style="margin-top:28px">Extrato</h3><div id="extrato" class="extrato"></div>
   </section>

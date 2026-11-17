@@ -12,7 +12,7 @@ async function api(metodo, url, corpo) {
   const r = await fetch(url, { method: metodo, headers: corpo ? { 'Content-Type': 'application/json' } : {}, body: corpo ? JSON.stringify(corpo) : undefined })
   let j = {}
   try { j = await r.json() } catch {}
-  if (r.status === 401) { location.href = '/?entrar=1'; throw new Error('login') }
+  if (r.status === 401) { location.href = '/?entrar=1'; return new Promise(() => {}) }  // indo para o login: espera a troca de página, sem erro solto
   if (!r.ok) throw Object.assign(new Error(typeof j.detail === 'string' ? j.detail : 'Não deu certo. Tente de novo.'), { status: r.status })
   return j
 }
