@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Arena Bruta · Painel da casa</title>
+<link rel="stylesheet" href="/s/jogo.css">
+<style>
+main{max-width:1200px}.grade{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.met{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px}.met small{color:var(--dim)}.met b{display:block;font-family:"Bebas Neue",Impact,sans-serif;font-size:30px;color:var(--ouro2)}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden;margin-bottom:22px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--bd);text-align:left;font-size:14px}th{color:var(--dim);font-weight:600}
+.alerta{display:flex;gap:10px;justify-content:space-between;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin-bottom:6px}
+.alerta.novo{border-color:#d9583b;box-shadow:inset 3px 0 0 #d9583b}.selo{background:#d9583b;color:#fff;border-radius:999px;padding:2px 10px;font-size:12px;margin-left:8px}
+.ok{color:#9fd49f}.ruim{color:#e7a08a}h2{margin:24px 0 10px}
+#login{max-width:380px;margin:12vh auto}
+</style>
+</head>
+<body>
+<header class="barra"><span class="titulo" style="font-family:Georgia,serif;color:var(--ouro2);font-size:22px">Arena Bruta · Painel da casa</span><span class="selo" id="selo" hidden></span>
+  <button class="btn btn-sec" id="atualizar" style="margin-left:auto">Atualizar</button></header>
+<main>
+  <form class="card" id="login" hidden><h3>Entrar no painel</h3><label>Usuário<input name="usuario" autocomplete="username"></label><label>Senha<input name="senha" type="password" autocomplete="current-password"></label><button class="btn btn-ouro">Entrar</button><p id="login-msg" class="mut"></p></form>
+  <div id="painel" hidden>
+    <div class="grade" id="metricas"></div>
+    <h2>Alertas <button class="btn btn-sec" id="vistos" style="padding:6px 12px;font-size:13px">Marcar todos como vistos</button></h2><div id="alertas"></div>
+    <h2>Depósitos aguardando confirmação</h2><table id="deps"></table>
+    <h2>Saques aguardando aprovação</h2><table id="saqs"></table>
+    <h2>Tetos de caixa (contra competidores da casa)</h2>
+    <form class="card" id="ajustes" style="grid-template-columns:repeat(4,1fr);align-items:end"></form>
+  </div>
+</main>
+<script>
+const $ = (q) => document.querySelector(q), brl = (c) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',')
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+async function api(m, u, b) { const r = await fetch(u, { method: m, headers: b ? { 'Content-Type': 'application/json' } : {}, body: b ? JSON.stringify(b) : undefined }); const j = await r.json().catch(() => ({})); if (!r.ok) throw Object.assign(new Error(j.detail || 'erro'), { status: r.status }); return j }
+async function carregar() {
+  let j
+  try { j = await api('GET', '/api/painel/arena') } catch (e) { if (e.status === 401) { $('#login').hidden = false; $('#painel').hidden = true; return } throw e }
+  $('#login').hidden = true; $('#painel').hidden = false
+  const c = j.caixa, inv = j.invariantes
+  $('#metricas').innerHTML = [['Comissão acumulada', brl(c.receita)], ['Resultado contra bots', brl(c.bots)], ['Perda da casa hoje', brl(c.perda_hoje)], ['Exposição agora', brl(c.exposicao)], ['Dinheiro dos jogadores', brl(c.custodia)]]
+    .map(([k, v]) => `<div class="met"><small>${k}</small><b>${v}</b></div>`).join('') +
+    `<div class="met" style="grid-column:1/-1"><small>Razão contábil</small> <span class="${inv.soma_zero && !inv.negativos.length ? 'ok' : 'ruim'}">${inv.soma_zero ? 'fecha em zero' : 'NÃO FECHA'} · ${inv.negativos.length ? inv.negativos.length + ' saldo(s) negativo(s)!' : 'nenhum saldo negativo'}</span> · partidas hoje: ${j.partidas_hoje}</div>`
+  $('#selo').hidden = !j.nao_vistos; $('#selo').textContent = j.nao_vistos + ' alerta(s)'
+  $('#alertas').innerHTML = j.alertas.map((a) => `<div class="alerta ${a.visto ? '' : 'novo'}"><span>${esc(a.texto)}</span><small class="mut">${new Date(a.criado * 1000).toLocaleString('pt-BR')}</small></div>`).join('') || '<p class="mut">Nenhum alerta.</p>'
+  $('#deps').innerHTML = '<tr><th>#</th><th>Jogador</th><th>Valor</th><th>Criado</th><th>Obs.</th><th></th></tr>' + j.depositos.map((d) => `<tr><td>${d.id}</td><td>${esc(d.email)}</td><td>${brl(d.valor)}</td><td>${new Date(d.criado * 1000).toLocaleString('pt-BR')}</td><td>${esc(d.obs)}</td>
+    <td><button class="btn btn-ouro" data-dep="${d.id}" data-a="confirmar">Confirmar Pix recebido</button> <button class="btn btn-sec" data-dep="${d.id}" data-a="cancelar">Cancelar</button></td></tr>`).join('')
+  $('#saqs').innerHTML = '<tr><th>#</th><th>Jogador</th><th>Valor</th><th>Chave Pix</th><th>Pedido</th><th></th></tr>' + j.saques.map((s) => `<tr><td>${s.id}</td><td>${esc(s.apelido || '')} · ${esc(s.email)}</td><td>${brl(s.valor)}</td><td>${esc(s.pix_tipo)}: ${esc(s.pix_chave)}</td><td>${new Date(s.criado * 1000).toLocaleString('pt-BR')}</td>
+    <td><button class="btn btn-ouro" data-saq="${s.id}" data-a="pagar">Marcar como pago</button> <button class="btn btn-sec" data-saq="${s.id}" data-a="recusar">Recusar</button></td></tr>`).join('')
+  const nomes = { teto_exposicao: 'Exposição máxima ao mesmo tempo (R$)', teto_perda_dia: 'Perda máxima da casa por dia (R$)', teto_ganho_jogador_dia: 'Ganho máximo por jogador por dia (R$)', bots_combate: 'Competidores da casa no Combate (1 = ligado)' }
+  $('#ajustes').innerHTML = Object.entries(j.ajustes).map(([k, v]) => `<label>${nomes[k]}<input name="${k}" type="number" value="${k === 'bots_combate' ? v : v / 100}"></label>`).join('') + '<button class="btn btn-ouro">Salvar tetos</button>'
+}
+document.addEventListener('click', async (e) => {
+  const d = e.target.closest('[data-dep]'), s = e.target.closest('[data-saq]')
+  try {
+    if (d) { await api('POST', `/api/painel/arena/deposito/${d.dataset.dep}/${d.dataset.a}`); carregar() }
+    if (s) { const obs = s.dataset.a === 'recusar' ? prompt('Motivo da recusa (o jogador vê):') || '' : 'pago via Pix'; await api('POST', `/api/painel/arena/saque/${s.dataset.saq}/${s.dataset.a}`, { obs }); carregar() }
+  } catch (err) { alert(err.message) }
+})
+$('#vistos').onclick = async () => { await api('POST', '/api/painel/arena/alertas/vistos'); carregar() }
+$('#ajustes').onsubmit = async (e) => { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target).entries()); for (const k in f) f[k] = k === 'bots_combate' ? +f[k] : Math.round(+f[k] * 100); await api('POST', '/api/painel/arena/ajustes', f); carregar() }
+$('#login').onsubmit = async (e) => { e.preventDefault(); try { await api('POST', '/api/painel/entrar', Object.fromEntries(new FormData(e.target).entries())); carregar() } catch (err) { $('#login-msg').textContent = err.message } }
+$('#atualizar').onclick = carregar
+carregar(); setInterval(carregar, 30000)
+</script>
+</body>
+</html>

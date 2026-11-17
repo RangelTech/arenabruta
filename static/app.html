@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Arena Bruta</title>
+<meta name="theme-color" content="#0d0c0b">
+<link rel="manifest" href="/s/manifest.webmanifest">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230d0c0b'/><text x='32' y='45' font-family='Georgia' font-weight='900' font-size='36' text-anchor='middle' fill='%23c49a46'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rye&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/s/estilo.css">
+<link rel="stylesheet" href="/s/jogo.css">
+</head>
+<body>
+<header class="barra">
+  <a class="marca" href="/"><span class="titulo">Arena Bruta</span></a>
+  <div class="saldo-topo" id="saldo-topo" title="Saldo disponível">R$ 0,00</div>
+  <nav class="vistas" role="tablist">
+    <button data-v="lobby" class="on">Arenas</button><button data-v="carteira">Carteira</button><button data-v="ranking">Ranking</button><button data-v="perfil">Perfil</button>
+  </nav>
+</header>
+
+<main>
+  <!-- LOBBY -->
+  <section class="vista on" id="v-lobby">
+    <div class="cab"><div><h1 class="bebas">Escolha a sua arena</h1><p id="nivel-txt" class="mut">Nível 1 · 0 vitórias</p></div>
+      <div class="troca-modo" role="radiogroup"><button data-modo="combate" class="on">Arena de Combate <small>valendo dinheiro</small></button><button data-modo="treino">Arena de Treino <small>grátis</small></button></div></div>
+    <div class="arenas" id="arenas"></div>
+    <p class="aviso-jogo">Jogue com responsabilidade. O máximo que você arrisca numa partida é a entrada da arena. Proibido para menores de 18.</p>
+  </section>
+
+  <!-- PARTIDA -->
+  <section class="vista" id="v-partida">
+    <div class="palco3d"><canvas id="cena3d"></canvas>
+      <div class="placar"><div class="lado lado-a"><b id="nome-a">Você</b><span id="marcha-a">1ª</span></div>
+        <div class="corda"><i id="marcador"></i><span class="meta esq"></span><span class="meta dir"></span></div>
+        <div class="lado lado-b"><b id="nome-b">Rival</b><span id="marcha-b">1ª</span></div></div>
+      <div class="relogio bebas" id="relogio">30</div>
+      <div class="contagem bebas" id="contagem" hidden>3</div>
+      <div class="espera" id="espera" hidden><div class="spin"></div><p id="espera-txt">Procurando adversário…</p><button class="btn btn-sec" id="sair-fila">Sair da fila</button></div>
+      <div class="resultado" id="resultado" hidden><h2 class="bebas" id="res-tit">VOCÊ VENCEU</h2><p id="res-txt"></p>
+        <div class="linha"><button class="btn btn-ouro" id="de-novo">Jogar de novo</button><button class="btn btn-sec" id="voltar">Voltar às arenas</button></div></div>
+    </div>
+    <div class="painel-ctrl">
+      <div class="medidor"><svg viewBox="0 0 120 70" class="rpm"><path d="M10 64 A50 50 0 0 1 110 64" class="trilho"/><path d="M10 64 A50 50 0 0 1 110 64" class="cheio" id="rpm-arco"/></svg>
+        <div class="rpm-txt"><b id="rpm">800</b><small>rpm</small></div><div class="temp"><i id="temp"></i></div><small class="mut" id="aviso-motor">temperatura</small></div>
+      <label class="tracao">Tração <b id="tracao-v">72%</b><input type="range" id="tracao" min="0" max="100" value="72"></label>
+      <button class="btn-marcha" id="b-marcha" aria-label="Subir marcha">MARCHA <b>▲</b></button>
+      <button class="btn-acel" id="b-acel" aria-label="Acelerar (segure)">ACELERAR</button>
+    </div>
+    <p class="mut dica">Segure ACELERAR (ou a barra de espaço). Suba a marcha (seta para cima) perto de 5.000 rpm. Tração perto de 72% não patina. Acima de 6.000 rpm o motor esquenta.</p>
+  </section>
+
+  <!-- CARTEIRA -->
+  <section class="vista" id="v-carteira">
+    <div class="cab"><h1 class="bebas">Carteira</h1></div>
+    <div class="saldos"><div><small>Disponível</small><b id="s-disp">R$ 0,00</b></div><div><small>Em partida</small><b id="s-res">R$ 0,00</b></div><div><small>Saque em análise</small><b id="s-saq">R$ 0,00</b></div></div>
+    <div class="duas">
+      <form class="card" id="f-dep"><h3>Depositar pelo Pix</h3><p class="mut">A partir de R$ 10,00. O saldo entra quando o Pix é confirmado.</p>
+        <div class="valores"><button type="button" data-v="10">R$ 10</button><button type="button" data-v="20">R$ 20</button><button type="button" data-v="50">R$ 50</button><button type="button" data-v="100">R$ 100</button></div>
+        <label>Valor (R$)<input id="dep-valor" type="number" min="10" step="1" value="20"></label><button class="btn btn-ouro">Gerar depósito</button>
+        <div id="dep-info" class="pix" hidden></div></form>
+      <form class="card" id="f-saq"><h3>Sacar</h3><p class="mut">Cai na chave Pix cadastrada no seu nome (Perfil). Sem precisar jogar de novo.</p>
+        <label>Valor (R$)<input id="saq-valor" type="number" min="10" step="0.01"></label><button class="btn btn-sec">Pedir saque</button><p id="saq-msg" class="mut"></p></form>
+    </div>
+    <h3 style="margin-top:28px">Extrato</h3><div id="extrato" class="extrato"></div>
+  </section>
+
+  <!-- RANKING -->
+  <section class="vista" id="v-ranking"><div class="cab"><h1 class="bebas">Ranking de habilidade</h1><p class="mut">Experiência e vitórias. Saldo não entra no ranking.</p></div><div id="ranking" class="ranking"></div>
+    <h3 style="margin-top:28px">Minhas partidas</h3><div id="minhas" class="extrato"></div></section>
+
+  <!-- PERFIL -->
+  <section class="vista" id="v-perfil">
+    <div class="cab"><h1 class="bebas">Perfil</h1></div>
+    <div class="duas">
+      <form class="card" id="f-perfil"><h3>Seus dados</h3>
+        <label>Apelido na arena<input name="apelido" required minlength="3" maxlength="24"></label>
+        <label>Data de nascimento <small>(só maiores de 18; não muda depois)</small><input name="nascimento" type="date" required></label>
+        <label>Tipo da chave Pix<select name="pix_tipo"><option value="cpf">CPF</option><option value="email">E-mail</option><option value="celular">Celular</option><option value="aleatoria">Aleatória</option></select></label>
+        <label>Chave Pix (no seu nome)<input name="pix_chave" maxlength="80"></label>
+        <button class="btn btn-ouro">Salvar</button><p id="perfil-msg" class="mut"></p></form>
+      <form class="card" id="f-lim"><h3>Jogo responsável</h3>
+        <label>Limite de depósito por dia (R$, 0 = sem limite)<input id="lim-dep" type="number" min="0" step="1"></label>
+        <button class="btn btn-sec">Salvar limite</button>
+        <h3 style="margin-top:20px">Pausa voluntária</h3><p class="mut">Bloqueia partidas e depósitos pelo período. Saques continuam liberados.</p>
+        <div class="valores"><button type="button" data-pausa="1">1 dia</button><button type="button" data-pausa="7">7 dias</button><button type="button" data-pausa="30">30 dias</button><button type="button" data-pausa="180">6 meses</button></div>
+        <p id="lim-msg" class="mut"></p>
+        <p style="margin-top:18px"><button type="button" class="link" id="sair">Sair da conta</button></p></form>
+    </div>
+  </section>
+</main>
+<div class="modal" id="m-entrar" hidden role="dialog" aria-modal="true" aria-labelledby="m-tit"><div class="caixa"><button class="x" data-fechar aria-label="Fechar">×</button></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="/s/login.js" data-conta="/api/conta" data-destino="/app"></script>
+<script type="module" src="/s/jogo.js"></script>
+</body>
+</html>

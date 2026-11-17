@@ -1,0 +1,65 @@
+/* Arena Bruta: premium rural. Carvão, dourado, couro, verde militar e bege. Nada de cara de caça-níquel. */
+:root{--marca:#c49a46;--ac:#c49a46;--bg:#0d0c0b;--bg2:#151310;--card:#1a1714;--card2:#211d18;--bd:#2f2a22;--fg:#f3ebdd;--mut:#bfb29b;--dim:#857a67;
+  --ouro:#c49a46;--ouro2:#e2c27e;--couro:#63402a;--militar:#334532;--bege:#e9dbc4;--r:18px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.titulo{font-family:"Rye","Bebas Neue",Impact,sans-serif;letter-spacing:.02em;line-height:.95;font-weight:400}
+.bebas{font-family:"Bebas Neue",Impact,sans-serif;letter-spacing:.04em}
+.wrap{width:min(1180px,100%);margin:0 auto;padding:0 24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:12px;padding:15px 26px;font-weight:800;border:1px solid transparent;cursor:pointer;text-decoration:none;font-size:16px;transition:transform .2s,box-shadow .2s;letter-spacing:.02em}
+.btn:hover{transform:translateY(-2px)}
+.btn-ouro{background:linear-gradient(180deg,#e2c27e,#b0852f);color:#1b140a;box-shadow:0 14px 40px -12px rgba(196,154,70,.7),inset 0 1px 0 rgba(255,255,255,.35)}
+.btn-sec{background:rgba(255,255,255,.05);border-color:var(--bd);color:var(--fg)}
+.btn-lg{padding:18px 32px;font-size:18px}
+.topo{position:fixed;inset:0 0 auto 0;z-index:30;transition:background .3s;border-bottom:1px solid transparent}
+.topo.rolou{background:rgba(13,12,11,.88);backdrop-filter:blur(12px);border-color:var(--bd)}
+.topo .wrap{display:flex;align-items:center;justify-content:space-between;height:70px}
+.marca{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--fg)}
+.marca .titulo{font-size:28px;color:var(--ouro2);text-shadow:0 2px 0 #3a2a10}
+.topo nav{display:flex;gap:6px;align-items:center}
+.topo nav a.lnk{color:var(--mut);text-decoration:none;padding:8px 12px;font-weight:600;font-size:15px}
+.heroi{position:relative;height:100svh;min-height:620px;overflow:hidden}
+.heroi canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.heroi::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(13,12,11,.82),rgba(13,12,11,.35) 45%,transparent 65%),linear-gradient(180deg,rgba(13,12,11,.55),rgba(13,12,11,0) 30%,rgba(13,12,11,0) 55%,rgba(13,12,11,.95)),radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.45))}
+.heroi .txt{position:absolute;z-index:2;left:0;right:0;bottom:9vh}
+.heroi .selo{display:inline-block;border:1px solid rgba(196,154,70,.5);color:var(--ouro2);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;background:rgba(0,0,0,.35)}
+.heroi h1{font-family:"Bebas Neue",Impact,sans-serif;font-size:clamp(44px,5.6vw,86px);line-height:.95;max-width:900px;letter-spacing:.01em;margin:16px 0 14px;color:#fff;text-shadow:0 6px 30px rgba(0,0,0,.6)}
+.heroi h1 em{font-style:normal;color:var(--ouro2)}
+.heroi p.sub{font-size:clamp(17px,2vw,22px);color:#efe4d0;max-width:680px;margin:0 0 28px;text-shadow:0 2px 14px rgba(0,0,0,.7)}
+.acoes{display:flex;gap:14px;flex-wrap:wrap}
+.chips{display:flex;gap:18px;flex-wrap:wrap;margin-top:24px;color:var(--bege);font-size:14px}
+.chips b{color:var(--ouro2)}
+section.bloco{padding:110px 0}
+h2.titulo{font-size:clamp(38px,5.4vw,72px);margin:0 0 14px;color:var(--bege)}
+h2.titulo em{font-style:normal;color:var(--ouro2)}
+.lead{color:var(--mut);font-size:19px;max-width:680px}
+.escada{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:44px;align-items:end}
+.degrau{border-radius:16px;border:1px solid rgba(196,154,70,.35);background:linear-gradient(180deg,#221c13,#141210);padding:18px 14px;text-align:center;position:relative;overflow:hidden;transition:transform .3s}
+.degrau:hover{transform:translateY(-6px)}
+.degrau::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(226,194,126,.18),transparent 60%)}
+.degrau small{display:block;color:var(--dim);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.degrau h3{font-family:"Rye",serif;font-weight:400;font-size:20px;margin:6px 0 12px;color:var(--bege)}
+.degrau .ent{color:var(--mut);font-size:13px}
+.degrau .pre{font-family:"Bebas Neue",Impact,sans-serif;font-size:36px;color:var(--ouro2);line-height:1.05}
+.passos{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px}
+.passo{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:26px}
+.passo b{font-family:"Bebas Neue",sans-serif;font-size:44px;color:var(--ouro);line-height:1}
+.passo h3{margin:6px 0 6px;font-size:19px}.passo p{margin:0;color:var(--mut);font-size:15px}
+.card-ouro{max-width:760px;margin:44px auto 0;border-radius:22px;padding:30px;border:1px solid rgba(196,154,70,.55);background:linear-gradient(135deg,#2a2114,#15120e);box-shadow:0 30px 80px -30px rgba(196,154,70,.45)}
+.card-ouro .linha{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px dashed rgba(196,154,70,.25);font-size:17px}
+.card-ouro .linha:last-child{border-bottom:0}
+.card-ouro .linha b{color:var(--ouro2);font-family:"Bebas Neue",sans-serif;font-size:26px;letter-spacing:.04em}
+.faixa{position:relative;padding:110px 0;background:linear-gradient(180deg,var(--bg),#1a120c 50%,var(--bg));text-align:center}
+.faixa h2{font-size:clamp(40px,6vw,84px)}
+.grade3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px;text-align:left}
+.info{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:24px}
+.info h3{margin:0 0 6px;font-size:18px;color:var(--bege)}.info p{margin:0;color:var(--mut);font-size:15px}
+.contadores{display:flex;justify-content:center;gap:48px;flex-wrap:wrap;margin-top:30px}
+.contadores div{text-align:center}.contadores b{display:block;font-family:"Bebas Neue",sans-serif;font-size:58px;color:var(--ouro2);line-height:1}
+.contadores span{color:var(--mut);font-size:14px}
+details{border-bottom:1px solid var(--bd);padding:18px 0}details summary{cursor:pointer;font-weight:700;font-size:18px}details p{color:var(--mut);margin-top:10px}
+footer{padding:44px 0;border-top:1px solid var(--bd);color:var(--dim);font-size:14px}
+footer a{color:var(--mut)}
+.rev{opacity:0;transform:translateY(22px);transition:opacity .8s,transform .8s}.rev.vis{opacity:1;transform:none}
+@media (max-width:900px){.escada{grid-template-columns:repeat(2,1fr)}.passos,.grade3{grid-template-columns:1fr}.topo nav a.lnk{display:none}section.bloco{padding:80px 0}}
+@media (prefers-reduced-motion:reduce){.rev{opacity:1;transform:none}}

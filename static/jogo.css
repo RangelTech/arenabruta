@@ -1,0 +1,95 @@
+:root{--marca:#c49a46;--bg:#0d0c0b;--bg2:#151310;--card:#1a1714;--card2:#221e18;--bd:#2f2a22;--fg:#f3ebdd;--mut:#bfb29b;--dim:#857a67;--ouro:#c49a46;--ouro2:#e2c27e;--militar:#334532;--couro:#63402a;--verm:#d9583b}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.titulo{font-family:"Rye",serif;font-weight:400}.bebas{font-family:"Bebas Neue",Impact,sans-serif;letter-spacing:.03em;font-weight:400}
+.mut{color:var(--mut)}
+.barra{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:10px 20px;background:rgba(13,12,11,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
+.marca{text-decoration:none}.marca .titulo{font-size:24px;color:var(--ouro2)}
+.saldo-topo{margin-left:auto;font-family:"Bebas Neue",sans-serif;font-size:26px;color:var(--ouro2);border:1px solid rgba(196,154,70,.4);border-radius:10px;padding:2px 12px;cursor:pointer}
+.vistas{display:flex;gap:4px}
+.vistas button{background:none;border:0;color:var(--mut);font-weight:700;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:14px}
+.vistas button.on{background:rgba(196,154,70,.14);color:var(--ouro2)}
+main{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+.vista{display:none}.vista.on{display:block;animation:sobe .25s ease}
+@keyframes sobe{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.cab{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.cab h1{font-size:46px;margin:0;line-height:1}.cab p{margin:4px 0 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:13px 22px;font-weight:800;border:1px solid transparent;cursor:pointer;font-size:15px;transition:transform .15s}
+.btn:active{transform:scale(.97)}
+.btn-ouro{background:linear-gradient(180deg,#e2c27e,#b0852f);color:#1b140a}
+.btn-sec{background:rgba(255,255,255,.05);border-color:var(--bd);color:var(--fg)}
+.link{background:none;border:0;color:var(--mut);text-decoration:underline;cursor:pointer}
+.troca-modo{display:flex;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:4px}
+.troca-modo button{background:none;border:0;color:var(--mut);padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:800;text-align:left;line-height:1.2}
+.troca-modo button small{display:block;font-weight:500;font-size:11.5px;color:var(--dim)}
+.troca-modo button.on{background:linear-gradient(180deg,#2a2114,#1a150e);color:var(--ouro2);box-shadow:inset 0 0 0 1px rgba(196,154,70,.45)}
+.arenas{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.arena{position:relative;overflow:hidden;border-radius:18px;border:1px solid var(--bd);background:linear-gradient(160deg,#241d14,#141210);padding:22px;display:flex;flex-direction:column;gap:6px}
+.arena::after{content:"";position:absolute;right:-30px;top:-30px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(226,194,126,.18),transparent 70%)}
+.arena small{color:var(--dim);letter-spacing:.14em;text-transform:uppercase;font-size:11px}
+.arena h3{font-family:"Rye",serif;font-weight:400;font-size:26px;margin:0;color:var(--fg)}
+.arena .nums{display:flex;gap:18px;margin:8px 0 12px}
+.arena .nums div{display:flex;flex-direction:column}.arena .nums span{color:var(--dim);font-size:12px}
+.arena .nums b{font-family:"Bebas Neue",sans-serif;font-size:30px;line-height:1;color:var(--ouro2)}
+.arena .nums b.ent{color:var(--fg)}
+.arena .nota{color:var(--dim);font-size:12.5px}
+.arena.travada{opacity:.55}
+.aviso-jogo{color:var(--dim);font-size:13px;margin-top:18px;text-align:center}
+/* partida */
+.palco3d{position:relative;height:min(62vh,560px);border-radius:20px;overflow:hidden;border:1px solid var(--bd);background:#1a120c}
+.palco3d canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.placar{position:absolute;left:16px;right:16px;top:14px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
+.lado{background:rgba(13,12,11,.72);backdrop-filter:blur(6px);border:1px solid var(--bd);border-radius:12px;padding:6px 12px;display:flex;gap:10px;align-items:center}
+.lado b{font-size:14px}.lado span{font-family:"Bebas Neue";font-size:22px;color:var(--ouro2)}
+.lado-a{border-color:rgba(196,154,70,.6)}.lado-b{border-color:rgba(83,110,80,.7)}
+.corda{position:relative;height:12px;border-radius:8px;background:linear-gradient(90deg,rgba(196,154,70,.35),rgba(255,255,255,.08) 50%,rgba(83,110,80,.45));border:1px solid var(--bd)}
+.corda i{position:absolute;top:-6px;left:50%;width:6px;height:22px;margin-left:-3px;border-radius:3px;background:#fff;box-shadow:0 0 12px #fff;transition:left .1s linear}
+.relogio{position:absolute;top:64px;left:50%;transform:translateX(-50%);font-size:44px;color:#fff;text-shadow:0 2px 12px #000}
+.contagem{position:absolute;inset:0;display:grid;place-items:center;font-size:180px;color:var(--ouro2);text-shadow:0 6px 40px rgba(0,0,0,.8);background:rgba(0,0,0,.25)}
+.espera,.resultado{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(10,8,6,.72);backdrop-filter:blur(6px);text-align:center;padding:20px}
+.espera[hidden],.resultado[hidden],.contagem[hidden]{display:none}
+.resultado h2{font-size:84px;margin:0;line-height:.9;color:var(--ouro2)}
+.resultado.perdeu h2{color:#e7d9c0}
+.resultado p{font-size:18px;margin:0;color:var(--fg)}
+.resultado .linha{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.spin{width:48px;height:48px;border-radius:50%;border:4px solid rgba(196,154,70,.2);border-top-color:var(--ouro2);animation:gira 1s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.painel-ctrl{display:grid;grid-template-columns:1.1fr 1fr .9fr 1.4fr;gap:12px;margin-top:12px;align-items:stretch}
+.medidor{position:relative;background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;align-items:center}
+.rpm{width:150px;height:84px}.rpm path{fill:none;stroke-width:9;stroke-linecap:round}.rpm .trilho{stroke:#2c271f}.rpm .cheio{stroke:url(#g);stroke:var(--ouro2);stroke-dasharray:157;stroke-dashoffset:157;transition:stroke-dashoffset .1s linear}
+.rpm-txt{margin-top:-36px;text-align:center}.rpm-txt b{font-family:"Bebas Neue";font-size:30px}.rpm-txt small{color:var(--dim);margin-left:4px}
+.temp{width:100%;height:8px;border-radius:6px;background:#2c271f;margin-top:8px;overflow:hidden}.temp i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7ab87a,#e2c27e,#d9583b);transition:width .2s}
+.tracao{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;justify-content:center;gap:8px;color:var(--mut);font-weight:700}
+.tracao b{color:var(--ouro2)}.tracao input{accent-color:var(--ouro);width:100%;height:28px}
+.btn-marcha,.btn-acel{border-radius:16px;border:0;font-family:"Bebas Neue",sans-serif;font-size:28px;letter-spacing:.06em;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
+.btn-marcha{background:linear-gradient(180deg,#3a4a38,#253224);color:#e9dbc4;box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+.btn-marcha:active{transform:scale(.97)}
+.btn-acel{background:linear-gradient(180deg,#e2c27e,#a87a26);color:#1b140a;box-shadow:0 10px 30px -10px rgba(196,154,70,.8);min-height:96px}
+.btn-acel.on{background:linear-gradient(180deg,#ffd98a,#c4892a);box-shadow:0 0 0 4px rgba(226,194,126,.35),0 10px 40px -8px rgba(226,194,126,.9);transform:scale(.985)}
+.dica{font-size:13px;margin-top:10px;text-align:center}
+/* carteira, ranking, perfil */
+.saldos{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.saldos div{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px}
+.saldos small{color:var(--dim);display:block}.saldos b{font-family:"Bebas Neue";font-size:36px;color:var(--ouro2)}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:22px;display:grid;gap:12px}
+.card h3{margin:0}
+label{display:grid;gap:6px;color:var(--mut);font-size:13.5px}
+input,select{background:var(--bg2);border:1px solid var(--bd);border-radius:12px;color:var(--fg);padding:11px 12px;font:inherit}
+.valores{display:flex;gap:8px;flex-wrap:wrap}.valores button{background:var(--bg2);border:1px solid var(--bd);color:var(--fg);border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:700}
+.valores button:hover{border-color:var(--ouro)}
+.pix{border:1px dashed var(--ouro);border-radius:14px;padding:14px;background:rgba(196,154,70,.06)}
+.pix code{display:block;word-break:break-all;background:var(--bg2);border-radius:8px;padding:8px;margin:8px 0;color:var(--ouro2)}
+.extrato{display:grid;gap:6px}
+.extrato .item{display:flex;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 14px}
+.extrato .item span{color:var(--mut)}.extrato .item b.mais{color:#9fd49f}.extrato .item b.menos{color:#e7a08a}
+.ranking{display:grid;gap:6px}.ranking .item{display:grid;grid-template-columns:48px 1fr auto auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 14px}
+.ranking .pos{font-family:"Bebas Neue";font-size:26px;color:var(--ouro2)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#2a2114;border:1px solid var(--ouro);color:var(--fg);padding:12px 18px;border-radius:12px;z-index:90}
+@media (max-width:860px){
+  .barra{flex-wrap:wrap;gap:8px}.vistas{order:3;width:100%;justify-content:space-between}
+  .arenas{grid-template-columns:1fr}.duas{grid-template-columns:1fr}.saldos{grid-template-columns:1fr}
+  .painel-ctrl{grid-template-columns:1fr 1fr}.btn-acel{grid-column:1/-1;min-height:110px}
+  .palco3d{height:46vh}.resultado h2{font-size:60px}.contagem{font-size:120px}
+}

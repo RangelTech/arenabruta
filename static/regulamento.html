@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Regulamento · Arena Bruta</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rye&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/s/arena.css">
+<style>main{max-width:860px;margin:0 auto;padding:110px 24px 60px}h1{font-family:Rye,serif;font-weight:400;color:var(--ouro2);font-size:44px;margin:0 0 10px}h2{color:var(--bege);margin:34px 0 8px}p,li{color:var(--mut)}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}th,td{border-bottom:1px solid var(--bd);padding:8px;text-align:left}th{color:var(--dim)}</style>
+</head>
+<body>
+<header class="topo rolou"><div class="wrap"><a class="marca" href="/"><span class="titulo">Arena Bruta</span></a><nav><a class="btn btn-sec" href="/app">Jogar</a></nav></div></header>
+<main>
+  <h1>Regulamento</h1>
+  <p>A Arena Bruta é uma competição de habilidade. O resultado de cada partida depende exclusivamente dos comandos dos participantes. Não há sorteio, carta, roleta nem qualquer elemento aleatório.</p>
+  <h2>1. Participação</h2>
+  <p>Só maiores de 18 anos. Cada pessoa tem uma única conta. A chave Pix de saque deve estar no nome do titular da conta.</p>
+  <h2>2. Partidas valendo dinheiro (Arena de Combate)</h2>
+  <ul><li>Os dois competidores entram com o mesmo valor, mostrado antes do aceite junto com o prêmio e a comissão.</li>
+    <li>O vencedor recebe o total das duas entradas menos a comissão da plataforma de 10% (arredondada ao centavo, metade para cima). O perdedor perde somente a sua entrada.</li>
+    <li>Empate, cancelamento ou falha técnica da plataforma devolvem as entradas integralmente, sem comissão.</li>
+    <li>Se um competidor se desconectar, o carro dele para de acelerar e a partida segue até o fim pelas regras normais.</li>
+    <li>Cada partida grava os comandos dos dois lados; o replay refaz exatamente o mesmo resultado.</li></ul>
+  <h2>3. Adversários</h2>
+  <p>Os adversários da Arena de Combate podem ser outros jogadores ou <b>competidores da casa</b>. Os competidores da casa têm níveis de habilidade fixos, iguais para todos, definidos na tabela abaixo. O nível do competidor é escolhido por uma tabela fixa a partir do nível de experiência do jogador. Nada muda por saldo, perdas, valor da entrada ou histórico financeiro. Quando o adversário é da casa, a plataforma é a contraparte e reserva o prêmio antes de a partida começar.</p>
+  <h2>4. Níveis dos competidores da casa (versão do motor <span id="versao">1</span>)</h2>
+  <table id="niveis"><tr><th>Nível</th><th>Competidor</th><th>Reação</th><th>Troca de marcha</th><th>Tração</th><th>Vacilos fixos</th></tr></table>
+  <h2>5. Depósitos e saques</h2>
+  <p>Depósitos pelo Pix entram no saldo após a confirmação do pagamento. Saques são conferidos e pagos na chave Pix cadastrada, sem exigência de novas partidas. Limites de depósito e pausa voluntária ficam no seu perfil.</p>
+  <h2>6. Jogo responsável</h2>
+  <p>Jogue apenas com dinheiro que você pode perder. O máximo que você arrisca numa partida é a entrada da arena. Se precisar, use a pausa voluntária ou procure ajuda.</p>
+</main>
+<script>
+fetch('/api/regulamento/niveis').then((r) => r.json()).then((j) => {
+  document.getElementById('versao').textContent = j.versao_motor
+  document.getElementById('niveis').innerHTML += j.niveis.map((n) => `<tr><td>${n.nivel}</td><td>${n.nome}</td><td>${(n.reacao / 20).toFixed(2)} s</td><td>${n.troca} rpm</td><td>${n.tracao}%</td><td>${n.erros.length} × ${(n.vacilo / 20).toFixed(1)} s</td></tr>`).join('')
+})
+</script>
+</body>
+</html>

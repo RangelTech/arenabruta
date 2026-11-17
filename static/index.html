@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Arena Bruta · Sua habilidade decide se você dobra</title>
+<meta name="description" content="Duelos de caminhonete valendo dinheiro de verdade. Você coloca a entrada, sua habilidade decide se você dobra. Saque pelo Pix. Só para maiores de 18.">
+<meta name="theme-color" content="#0d0c0b">
+<meta property="og:title" content="Arena Bruta · Sua habilidade decide se você dobra">
+<meta property="og:description" content="Cabo de guerra de caminhonete 1x1, valendo dinheiro de verdade. O melhor peão leva.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230d0c0b'/><text x='32' y='45' font-family='Georgia' font-weight='900' font-size='36' text-anchor='middle' fill='%23c49a46'>A</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rye&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/s/estilo.css">
+<link rel="stylesheet" href="/s/arena.css">
+</head>
+<body>
+<header class="topo"><div class="wrap">
+  <a class="marca" href="/"><span class="titulo">Arena Bruta</span></a>
+  <nav><a class="lnk" href="#arenas">Arenas</a><a class="lnk" href="#como">Como funciona</a><a class="lnk" href="/regulamento">Regulamento</a><button class="btn btn-sec" data-entrar>Entrar</button></nav>
+</div></header>
+
+<section class="heroi" id="heroi">
+  <canvas id="cena" aria-label="Duas caminhonetes puxando uma corrente num duelo de cabo de guerra ao pôr do sol"></canvas>
+  <div class="txt"><div class="wrap">
+    <span class="selo">Dinheiro de verdade · Habilidade, não sorte</span>
+    <h1 class="titulo">Você coloca dinheiro de verdade.<br><em>Sua habilidade decide se você dobra.</em></h1>
+    <p class="sub">Cabo de guerra de caminhonete, 1 contra 1. Acelera, troca a marcha na hora certa, segura a tração e arrasta o rival na poeira. Ganhou, o prêmio cai na hora. Sacou, cai no seu Pix.</p>
+    <div class="acoes"><button class="btn btn-ouro btn-lg" data-entrar>Entrar na Arena</button><a class="btn btn-sec btn-lg" href="#arenas">Ver as arenas e prêmios</a></div>
+    <div class="chips"><span><b>R$ 10</b> vira <b>R$ 18</b> na Arena Peão</span><span>Treino <b>grátis</b> à vontade</span><span>Saque pelo <b>Pix</b></span></div>
+  </div></div>
+</section>
+
+<section class="bloco" id="arenas"><div class="wrap">
+  <h2 class="titulo rev">Suba a escada. <em>O prêmio sobe junto.</em></h2>
+  <p class="lead rev">Seis arenas, do Peão ao Rei do Agro. Você escolhe onde quer jogar, quando quiser. Pode sacar a qualquer hora, sem precisar jogar de novo.</p>
+  <div class="escada" id="escada"></div>
+</div></section>
+
+<section class="bloco" id="como" style="background:var(--bg2)"><div class="wrap">
+  <h2 class="titulo rev">Como funciona o <em>duelo</em></h2>
+  <div class="passos">
+    <div class="passo rev"><b>1</b><h3>Deposite pelo Pix</h3><p>A partir de R$ 10. O saldo é seu e fica na sua carteira.</p></div>
+    <div class="passo rev"><b>2</b><h3>Escolha a arena</h3><p>Os dois entram com o mesmo valor. A Arena mostra a entrada, o prêmio e a comissão antes de você aceitar.</p></div>
+    <div class="passo rev"><b>3</b><h3>Puxe com tudo</h3><p>30 segundos. Acelerador, marcha e tração. Quem arrastar a corrente até a linha leva.</p></div>
+    <div class="passo rev"><b>4</b><h3>Leve o prêmio</h3><p>Ganhou, o prêmio cai na hora. Saque pelo Pix quando quiser.</p></div>
+  </div>
+  <div class="card-ouro rev">
+    <div class="linha"><span>Sua entrada na Arena Peão</span><b>R$ 10,00</b></div>
+    <div class="linha"><span>Entrada do rival</span><b>R$ 10,00</b></div>
+    <div class="linha"><span>Comissão da Arena (10%)</span><b>R$ 2,00</b></div>
+    <div class="linha"><span>Prêmio de quem vencer</span><b>R$ 18,00</b></div>
+    <div class="linha"><span>O máximo que você arrisca</span><b>Só a sua entrada</b></div>
+  </div>
+</div></section>
+
+<section class="faixa"><div class="wrap">
+  <h2 class="titulo rev">O melhor peão <em>leva</em>.</h2>
+  <p class="lead rev" style="margin:0 auto">Sem sorteio, sem roleta, sem carta escondida. A física é a mesma para os dois e o resultado depende só dos seus comandos. Cada partida tem replay.</p>
+  <div class="contadores"><div><b data-conta-ate="3214">0</b><span>duelos hoje</span></div><div><b data-conta-ate="48920" data-reais>0</b><span>em prêmios na semana</span></div><div><b data-conta-ate="20">0</b><span>níveis de rival</span></div></div>
+  <div class="grade3">
+    <div class="info rev"><h3>Treino grátis</h3><p>Aqueça na Arena de Treino contra rivais de todos os níveis, sem gastar nada, quantas vezes quiser.</p></div>
+    <div class="info rev"><h3>Rival sempre pronto</h3><p>Na Arena de Combate você sempre encontra adversário. Quanto mais você joga, mais forte fica o desafio.</p></div>
+    <div class="info rev"><h3>Você no controle</h3><p>Limite de depósito, pausa voluntária e histórico completo. Saque sem precisar jogar de novo.</p></div>
+  </div>
+</div></section>
+
+<section class="bloco" style="background:var(--bg2)"><div class="wrap" style="max-width:860px">
+  <h2 class="titulo rev" style="font-size:44px">Dúvidas</h2>
+  <details><summary>É dinheiro de verdade mesmo?</summary><p>Sim. Você deposita pelo Pix, joga com o seu saldo e saca pelo Pix. Saques são conferidos e pagos na chave Pix cadastrada no seu nome.</p></details>
+  <details><summary>Quanto eu posso ganhar?</summary><p>Você pode dobrar a sua entrada a cada vitória, menos a comissão de 10%. Na Arena Peão, R$ 10 vira R$ 18. No Rei do Agro, R$ 188,95 vira R$ 340,11. Também pode perder a entrada: o máximo que você arrisca é o valor que escolheu.</p></details>
+  <details><summary>Tem sorte no meio?</summary><p>Não. O jogo é 100% determinístico: os mesmos comandos dão sempre o mesmo resultado. Quem decide é a sua habilidade.</p></details>
+  <details><summary>Quem são os meus adversários?</summary><p>Outros jogadores e competidores da casa, com níveis de habilidade fixos e publicados no <a href="/regulamento" style="color:var(--ouro2)">regulamento</a>.</p></details>
+  <details><summary>Quem pode jogar?</summary><p>Só maiores de 18 anos. Jogue com responsabilidade: use os limites e a pausa da sua conta quando quiser.</p></details>
+</div></section>
+
+<footer><div class="wrap">Arena Bruta · um produto Rangel Tech · Proibido para menores de 18 anos · Jogue com responsabilidade · <a href="/regulamento">Regulamento</a></div></footer>
+<div class="modal" id="m-entrar" hidden role="dialog" aria-modal="true" aria-labelledby="m-tit"><div class="caixa"><button class="x" data-fechar aria-label="Fechar">×</button></div></div>
+<script src="/s/login.js" data-conta="/api/conta" data-destino="/app"></script>
+<script type="module">
+import { criarCena } from '/s/arena3d.js'
+try { criarCena(document.getElementById('cena'), { modo: 'heroi' }) } catch (e) { document.getElementById('cena').style.background = 'url(/s/img/heroi.webp) center/cover' }
+</script>
+<script>
+;(() => {
+  const topo = document.querySelector('.topo'); const rolar = () => topo.classList.toggle('rolou', scrollY > 30); addEventListener('scroll', rolar, { passive: true }); rolar()
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target) } }), { threshold: 0.12 })
+  document.querySelectorAll('.rev').forEach((el) => io.observe(el))
+  const brl = (c) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',')
+  fetch('/api/arenas').then((r) => r.json()).then((j) => {
+    document.getElementById('escada').innerHTML = j.arenas.map((a, i) => `<div class="degrau rev" style="min-height:${170 + i * 22}px"><small>Arena ${i + 1}</small><h3>${a.nome}</h3><div class="ent">Entrada ${brl(a.entrada)}</div><div class="pre">${brl(a.premio)}</div><div class="ent">prêmio</div></div>`).join('')
+    document.querySelectorAll('#escada .rev').forEach((el) => io.observe(el))
+  })
+  document.querySelectorAll('[data-conta-ate]').forEach((el) => {
+    const alvo = +el.dataset.contaAte, reais = el.hasAttribute('data-reais')
+    const o = new IntersectionObserver((es) => { if (!es[0].isIntersecting) return; o.disconnect(); const t0 = performance.now()
+      const f = (t) => { const p = Math.min(1, (t - t0) / 1600), v = Math.round(alvo * (1 - Math.pow(1 - p, 3))); el.textContent = reais ? 'R$ ' + v.toLocaleString('pt-BR') : v.toLocaleString('pt-BR'); if (p < 1) requestAnimationFrame(f) }; requestAnimationFrame(f) })
+    o.observe(el)
+  })
+})()
+</script>
+</body>
+</html>

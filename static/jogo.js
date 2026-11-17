@@ -1,0 +1,244 @@
+// App da Arena Bruta: lobby, partida 3D ao vivo (WebSocket, servidor autoritativo), carteira Pix, ranking e perfil.
+import { criarCena } from '/s/arena3d.js'
+
+const $ = (q, r = document) => r.querySelector(q)
+const $$ = (q, r = document) => [...r.querySelectorAll(q)]
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+const brl = (c) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',')
+let conta = null, modo = 'combate', arenasCache = [], cena = null, ws = null, partida = null, lado = 'a', ultimaArena = null
+let toastT = 0
+const toast = (t) => { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (el.hidden = true), 4500) }
+async function api(metodo, url, corpo) {
+  const r = await fetch(url, { method: metodo, headers: corpo ? { 'Content-Type': 'application/json' } : {}, body: corpo ? JSON.stringify(corpo) : undefined })
+  let j = {}
+  try { j = await r.json() } catch {}
+  if (r.status === 401) { location.href = '/?entrar=1'; throw new Error('login') }
+  if (!r.ok) throw Object.assign(new Error(typeof j.detail === 'string' ? j.detail : 'Não deu certo. Tente de novo.'), { status: r.status })
+  return j
+}
+
+// ---------------- vistas ----------------
+function irVista(v) {
+  $$('.vistas button').forEach((b) => b.classList.toggle('on', b.dataset.v === v))
+  $$('.vista').forEach((s) => s.classList.toggle('on', s.id === 'v-' + v))
+  if (v !== 'partida') history.replaceState(null, '', '#' + v)
+  ;({ lobby: carregarLobby, carteira: carregarCarteira, ranking: carregarRanking, perfil: carregarPerfil })[v]?.()
+}
+$$('.vistas button').forEach((b) => (b.onclick = () => irVista(b.dataset.v)))
+$('#saldo-topo').onclick = () => irVista('carteira')
+addEventListener('hashchange', () => { const v = location.hash.slice(1); if ($('#v-' + v) && v !== 'partida') irVista(v) })
+
+async function carregarConta() {
+  conta = await api('GET', '/api/conta')
+  $('#saldo-topo').textContent = brl(conta.saldo.disponivel)
+  if (conta.perfil) $('#nivel-txt').textContent = `Nível ${conta.perfil.nivel} · ${conta.perfil.vitorias} vitórias · ${conta.perfil.xp} XP`
+  return conta
+}
+
+// ---------------- lobby ----------------
+$$('.troca-modo button').forEach((b) => (b.onclick = () => { modo = b.dataset.modo; $$('.troca-modo button').forEach((x) => x.classList.toggle('on', x === b)); desenharArenas() }))
+async function carregarLobby() {
+  await carregarConta()
+  if (!arenasCache.length) arenasCache = (await api('GET', '/api/arenas')).arenas
+  desenharArenas()
+}
+function desenharArenas() {
+  const disp = conta?.saldo?.disponivel || 0
+  $('#arenas').innerHTML = arenasCache.map((a, i) => {
+    const pode = modo === 'treino' || disp >= a.entrada
+    return `<div class="arena ${pode ? '' : 'travada'}"><small>Arena ${i + 1}</small><h3>${esc(a.nome)}</h3>
+      ${modo === 'combate' ? `<div class="nums"><div><span>Entrada</span><b class="ent">${brl(a.entrada)}</b></div><div><span>Prêmio</span><b>${brl(a.premio)}</b></div></div>
+      <div class="nota">Comissão ${brl(a.comissao)} · perda máxima: a sua entrada</div>` : '<div class="nums"><div><span>Treino</span><b>Grátis</b></div></div><div class="nota">Rival do seu nível. Não vale dinheiro.</div>'}
+      <button class="btn ${pode ? 'btn-ouro' : 'btn-sec'}" data-arena="${a.id}" style="margin-top:10px">${modo === 'treino' ? 'Treinar aqui' : pode ? 'Entrar no duelo' : 'Depositar para jogar'}</button></div>`
+  }).join('')
+  $$('[data-arena]').forEach((b) => (b.onclick = () => {
+    if (modo === 'combate' && (conta?.saldo?.disponivel || 0) < arenasCache.find((a) => a.id === b.dataset.arena).entrada) return irVista('carteira')
+    entrarNaFila(b.dataset.arena)
+  }))
+}
+
+// ---------------- partida ----------------
+async function entrarNaFila(arena) {
+  if (!conta.perfil) { toast('Complete o seu perfil (apelido e data de nascimento) antes de jogar.'); return irVista('perfil') }
+  ultimaArena = arena
+  try {
+    partida = await api('POST', '/api/fila', { arena, modo })
+  } catch (e) { return toast(e.message) }
+  abrirPartida()
+}
+function abrirPartida() {
+  $$('.vista').forEach((s) => s.classList.toggle('on', s.id === 'v-partida'))
+  $('#resultado').hidden = true
+  $('#nome-a').textContent = conta.perfil?.apelido || 'Você'
+  if (!cena) cena = criarCena($('#cena3d'), { modo: 'jogo' })
+  else cena.tamanho()
+  cena.atualizar({ pos: 0, a: { rpm: 800, forca: 0, acel: 0, temp: 0 }, b: { rpm: 800, forca: 0, acel: 0, temp: 0 } })
+  if (partida.estado === 'fila') esperarAdversario()
+  else conectar()
+}
+async function esperarAdversario() {
+  $('#espera').hidden = false
+  $('#espera-txt').textContent = 'Procurando adversário…'
+  const id = partida.id
+  while (partida && partida.id === id && partida.estado === 'fila') {
+    await new Promise((r) => setTimeout(r, 1500))
+    try { partida = await api('GET', `/api/partida/${id}`) } catch { break }
+  }
+  if (partida && partida.estado === 'pronta') conectar()
+}
+$('#sair-fila').onclick = async () => {
+  try { await api('POST', `/api/partida/${partida.id}/sair`); toast('Você saiu da fila. A entrada voltou para o saldo.') } catch (e) { toast(e.message) }
+  partida = null
+  irVista('lobby')
+}
+function conectar() {
+  $('#espera').hidden = false
+  $('#espera-txt').textContent = 'Adversário encontrado. Esquentando os motores…'
+  $('#nome-b').textContent = partida.rival?.apelido || 'Rival'
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + `/ws/partida/${partida.id}`)
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data)
+    if (m.t === 'ok') { lado = m.lado; if (lado === 'b') { $('#nome-b').textContent = conta.perfil?.apelido || 'Você'; $('#nome-a').textContent = m.partida.rival?.apelido || 'Rival' } ; enviar({ tracao: +$('#tracao').value }) }
+    if (m.t === 'contagem') { $('#espera').hidden = true; const c = $('#contagem'); c.hidden = false; c.textContent = m.n; somMotor(true) }
+    if (m.t === 'estado') {
+      $('#contagem').hidden = true; $('#espera').hidden = true
+      const eu = m[lado], pos = lado === 'a' ? m.pos : -m.pos
+      cena.atualizar(m)
+      $('#marcador').style.left = (50 - (m.pos / 10000) * 50) + '%'
+      $('#marcha-a').textContent = m.a.marcha + 'ª'; $('#marcha-b').textContent = m.b.marcha + 'ª'
+      $('#relogio').textContent = Math.max(0, Math.ceil((600 - m.tick) / 20))
+      $('#rpm').textContent = eu.rpm
+      $('#rpm-arco').style.strokeDashoffset = 157 - 157 * Math.min(1, (eu.rpm - 800) / 6200)
+      $('#temp').style.width = Math.min(100, eu.temp / 10) + '%'
+      $('#aviso-motor').textContent = eu.fervendo ? 'MOTOR FERVENDO!' : eu.patinou ? 'patinando: ajuste a tração' : eu.rpm > 6000 ? 'giro alto: esquentando' : pos > 3000 ? 'arrastando o rival!' : 'temperatura'
+      somRpm(eu.rpm, eu.acel)
+    }
+    if (m.t === 'fim') fimPartida(m)
+  }
+  ws.onclose = () => { somMotor(false) }
+}
+function enviar(cmd) { if (ws && ws.readyState === 1) ws.send(JSON.stringify({ cmd })) }
+function fimPartida(m) {
+  somMotor(false)
+  const venci = m.vencedor === lado, empate = m.vencedor === 'empate'
+  const r = $('#resultado')
+  r.hidden = false
+  r.classList.toggle('perdeu', !venci && !empate)
+  $('#res-tit').textContent = empate ? 'EMPATE' : venci ? 'VOCÊ VENCEU' : 'NÃO FOI DESSA VEZ'
+  $('#res-txt').textContent = partida.modo === 'treino' ? (venci ? 'Bom treino. Já dá para encarar a Arena de Combate.' : 'Treino é para isso. Troque a marcha perto de 5.000 rpm e segure a tração.')
+    : empate ? 'Empate: a entrada voltou inteira para o seu saldo.' : venci ? `${brl(m.premio)} caíram no seu saldo.` : 'Você perdeu a entrada desta partida. Treine e volte mais forte.'
+  ws && ws.close(); ws = null
+  carregarConta()
+}
+$('#de-novo').onclick = () => entrarNaFila(ultimaArena)
+$('#voltar').onclick = () => { partida = null; irVista('lobby') }
+
+// controles: segurar o acelerador (toque, mouse ou espaço), marcha (botão ou seta), tração
+const acel = $('#b-acel')
+const liga = (on) => { acel.classList.toggle('on', on); enviar({ acel: on ? 1 : 0 }) }
+acel.addEventListener('pointerdown', (e) => { e.preventDefault(); acel.setPointerCapture(e.pointerId); liga(true) })
+acel.addEventListener('pointerup', () => liga(false)); acel.addEventListener('pointercancel', () => liga(false))
+$('#b-marcha').onclick = () => enviar({ marcha: 1 })
+$('#tracao').oninput = (e) => { $('#tracao-v').textContent = e.target.value + '%'; enviar({ tracao: +e.target.value }) }
+addEventListener('keydown', (e) => {
+  if (!$('#v-partida').classList.contains('on')) return
+  if (e.code === 'Space' && !e.repeat) { e.preventDefault(); liga(true) }
+  if (e.code === 'ArrowUp') { e.preventDefault(); enviar({ marcha: 1 }) }
+  if (e.code === 'ArrowDown') { e.preventDefault(); enviar({ marcha: -1 }) }
+})
+addEventListener('keyup', (e) => { if (e.code === 'Space' && $('#v-partida').classList.contains('on')) liga(false) })
+
+// ronco do diesel (Web Audio): grave que acompanha o giro + assobio da turbina no giro alto
+let audio = null
+function somMotor(on) {
+  try {
+    if (on && !audio) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)()
+      const o = ctx.createOscillator(); o.type = 'sawtooth'
+      const o2 = ctx.createOscillator(); o2.type = 'square'
+      const filtro = ctx.createBiquadFilter(); filtro.type = 'lowpass'; filtro.frequency.value = 420
+      const g = ctx.createGain(); g.gain.value = 0.05
+      const turbo = ctx.createOscillator(); turbo.type = 'sine'
+      const gt = ctx.createGain(); gt.gain.value = 0
+      o.connect(filtro); o2.connect(filtro); filtro.connect(g); g.connect(ctx.destination); turbo.connect(gt); gt.connect(ctx.destination)
+      o.start(); o2.start(); turbo.start()
+      audio = { ctx, o, o2, g, turbo, gt }
+    } else if (!on && audio) { audio.ctx.close(); audio = null }
+  } catch {}
+}
+function somRpm(rpm, acelerando) {
+  if (!audio) return
+  const t = audio.ctx.currentTime
+  audio.o.frequency.setTargetAtTime(28 + rpm / 70, t, 0.05)
+  audio.o2.frequency.setTargetAtTime(14 + rpm / 140, t, 0.05)
+  audio.g.gain.setTargetAtTime(acelerando ? 0.07 : 0.035, t, 0.08)
+  audio.turbo.frequency.setTargetAtTime(1800 + rpm / 3, t, 0.1)
+  audio.gt.gain.setTargetAtTime(acelerando && rpm > 4800 ? 0.012 : 0, t, 0.15)
+}
+
+// ---------------- carteira ----------------
+async function carregarCarteira() {
+  const j = await api('GET', '/api/carteira')
+  $('#s-disp').textContent = brl(j.saldo.disponivel); $('#s-res').textContent = brl(j.saldo.reservado); $('#s-saq').textContent = brl(j.saldo.saque)
+  $('#saldo-topo').textContent = brl(j.saldo.disponivel)
+  const est = { pendente: 'aguardando confirmação', confirmado: 'confirmado', cancelado: 'cancelado', pago: 'pago', recusado: 'recusado' }
+  const linhas = [
+    ...j.depositos.filter((d) => d.estado === 'pendente').map((d) => `<div class="item"><span>Depósito ${brl(d.valor)} · ${est[d.estado]}</span><b>⏳</b></div>`),
+    ...j.saques.filter((s) => s.estado === 'pendente').map((s) => `<div class="item"><span>Saque ${brl(s.valor)} · em análise</span><b>⏳</b></div>`),
+    ...j.extrato.map((l) => `<div class="item"><span>${new Date(l.criado * 1000).toLocaleString('pt-BR')} · ${esc(l.descricao)}</span><b class="${l.valor >= 0 ? 'mais' : 'menos'}">${l.valor >= 0 ? '+' : '−'} ${brl(Math.abs(l.valor))}</b></div>`),
+  ]
+  $('#extrato').innerHTML = linhas.join('') || '<p class="mut">Nenhum movimento ainda.</p>'
+}
+$$('#f-dep .valores button').forEach((b) => (b.onclick = () => ($('#dep-valor').value = b.dataset.v)))
+$('#f-dep').onsubmit = async (e) => {
+  e.preventDefault()
+  try {
+    const d = await api('POST', '/api/deposito', { valor: +$('#dep-valor').value })
+    const box = $('#dep-info')
+    box.hidden = false
+    box.innerHTML = `<b>Depósito de ${brl(d.valor)} criado</b><p class="mut" style="margin:6px 0">${esc(d.instrucoes)}</p>${d.copia_cola ? `<code>${esc(d.copia_cola)}</code><button type="button" class="btn btn-sec" id="copiar">Copiar chave Pix</button>` : ''}
+      <button type="button" class="btn btn-ouro" id="paguei" style="margin-left:6px">Já paguei</button>`
+    $('#copiar') && ($('#copiar').onclick = () => navigator.clipboard.writeText(d.copia_cola).then(() => toast('Chave copiada.')))
+    $('#paguei').onclick = async () => { await api('POST', `/api/deposito/${d.id}/paguei`); toast('Obrigado! Assim que o Pix for confirmado, o saldo aparece aqui.'); carregarCarteira() }
+    carregarCarteira()
+  } catch (err) { toast(err.message); if (err.status === 428) irVista('perfil') }
+}
+$('#f-saq').onsubmit = async (e) => {
+  e.preventDefault()
+  try { const r = await api('POST', '/api/saque', { valor: +$('#saq-valor').value }); $('#saq-msg').textContent = r.aviso; carregarCarteira() }
+  catch (err) { $('#saq-msg').textContent = err.message; if (err.status === 428) irVista('perfil') }
+}
+
+// ---------------- ranking ----------------
+async function carregarRanking() {
+  const [r, m] = await Promise.all([api('GET', '/api/ranking'), api('GET', '/api/partidas')])
+  $('#ranking').innerHTML = r.ranking.map((p, i) => `<div class="item"><span class="pos">${i + 1}</span><b>${esc(p.apelido)}</b><span class="mut">Nível ${p.nivel}</span><span class="mut">${p.vitorias} vitórias</span></div>`).join('') || '<p class="mut">Ninguém no ranking ainda. Seja o primeiro.</p>'
+  $('#minhas').innerHTML = m.partidas.map((p) => `<div class="item"><span>${p.modo === 'treino' ? 'Treino' : 'Combate'} · ${esc(p.arena)} · vs ${esc(p.rival?.apelido || '—')}</span><b class="${p.vencedor === p.lado ? 'mais' : 'menos'}">${p.estado === 'cancelada' ? 'cancelada' : p.vencedor === 'empate' ? 'empate' : p.vencedor === p.lado ? 'vitória' : 'derrota'}</b></div>`).join('') || '<p class="mut">Sem partidas ainda.</p>'
+}
+
+// ---------------- perfil ----------------
+async function carregarPerfil() {
+  await carregarConta()
+  const f = $('#f-perfil'), p = conta.perfil
+  if (p) { f.apelido.value = p.apelido; f.nascimento.value = p.nascimento; f.nascimento.readOnly = true; f.pix_tipo.value = p.pix_tipo || 'cpf'; f.pix_chave.value = p.pix_chave || ''; $('#lim-dep').value = (p.limite_dep_dia || 0) / 100 }
+}
+$('#f-perfil').onsubmit = async (e) => {
+  e.preventDefault()
+  try { await api('POST', '/api/perfil', Object.fromEntries(new FormData(e.target).entries())); $('#perfil-msg').textContent = 'Salvo.'; carregarConta() }
+  catch (err) { $('#perfil-msg').textContent = err.message }
+}
+$('#f-lim').onsubmit = async (e) => { e.preventDefault(); try { await api('POST', '/api/limites', { limite_dep_dia: Math.round(+$('#lim-dep').value * 100) }); $('#lim-msg').textContent = 'Limite salvo.' } catch (err) { $('#lim-msg').textContent = err.message } }
+$$('[data-pausa]').forEach((b) => (b.onclick = async () => {
+  if (!confirm(`Pausar a conta por ${b.textContent}? Nesse tempo você não joga nem deposita (saque continua liberado).`)) return
+  try { await api('POST', '/api/limites', { pausa_dias: +b.dataset.pausa }); $('#lim-msg').textContent = 'Pausa ativada.' } catch (err) { $('#lim-msg').textContent = err.message }
+}))
+$('#sair').onclick = async () => { await api('POST', '/api/sair'); location.href = '/' }
+
+// ---------------- início ----------------
+;(async () => {
+  await carregarConta()
+  if (!conta.perfil) { irVista('perfil'); toast('Bem-vindo à Arena! Crie o seu apelido para começar.'); return }
+  const v = location.hash.slice(1)
+  irVista($('#v-' + v) && v !== 'partida' ? v : 'lobby')
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/s/sw.js').catch(() => {})
+})()
