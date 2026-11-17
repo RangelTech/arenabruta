@@ -55,24 +55,18 @@
     <p class="mut dica">Segure ACELERAR (ou a barra de espaço) e suba a marcha (seta para cima) no giro certo do seu mapa. Patinou? Alivie ou suba a marcha. O acerto (pneu, psi, relação e mapa) é feito no <a href="#box">Box</a>, antes de entrar.</p>
   </section>
 
-  <!-- BOX: acerto e garagem (fora da arena; nada visual muda a potência) -->
+  <!-- GARAGEM (Box): a caminhonete no centro, carrossel e ajustes; o carro daqui é o que entra na arena -->
   <section class="vista" id="v-box">
-    <div class="cab"><div><h1 class="bebas">Box</h1><p class="mut">Monte a sua caminhonete antes de entrar. Estilos diferentes, bem pilotados, têm a mesma força: o acerto muda COMO você pilota, não quem ganha.</p></div></div>
-    <div class="box-grade">
-      <div class="card box-vitrine"><canvas id="box-cena"></canvas><b id="box-nome" class="bebas">FAM 3500</b></div>
-      <form class="card" id="f-box">
-        <h3>Garagem <small class="mut">(só visual)</small></h3>
-        <label>Caminhonete<select id="bx-modelo"></select></label>
-        <div class="cores"><label>Pintura<input type="color" id="bx-cor" value="#c49a46"></label><label>Rodas<input type="color" id="bx-roda" value="#d9d9d9"></label>
-          <div class="amostras" id="bx-amostras"></div></div>
-        <h3 style="margin-top:18px">Acerto <small class="mut">(vale para todas as arenas)</small></h3>
-        <div class="opcoes" id="bx-pneu"></div>
-        <label>Calibragem <b id="bx-psi-v">30 psi</b><input type="range" id="bx-psi" min="15" max="45" value="30"></label>
-        <div class="opcoes" id="bx-relacao"></div>
-        <div class="opcoes" id="bx-mapa"></div>
-        <p class="mut box-dica">Cada cenário tem um piso. Lama pede pneu com cravo e pouco ar; areia fofa, pneu bem murcho; terra firme, mais ar. Pouco ar demais ou ar demais: perde aderência e patina. Relação curta = força na saída e muita troca; longa = menos troca, força no fim. Mapa torque esquenta antes; potência pede giro alto.</p>
-        <button class="btn btn-ouro">Salvar acerto</button><p class="mut" id="bx-msg"></p>
-      </form>
+    <div class="gar">
+      <div class="gar-palco"><canvas id="gar-cena" aria-label="Sua caminhonete girando no palco da garagem"></canvas>
+        <button class="gar-seta" id="gar-esq" aria-label="Caminhonete anterior">‹</button><button class="gar-seta dir" id="gar-dir" aria-label="Próxima caminhonete">›</button>
+        <div class="gar-nome"><small id="gar-pos">1/17</small><b class="bebas" id="gar-nome">FAM 3500</b></div>
+      </div>
+      <aside class="gar-graf"><h3>Motor e pneu</h3><canvas id="gar-graf" width="520" height="330"></canvas><div class="gar-numeros" id="gar-numeros"></div><div class="gar-barras" id="gar-barras"></div>
+        <p class="mut gar-obs">Gráfico ilustrativo do seu acerto.</p></aside>
+      <nav class="gar-abas"></nav>
+      <div class="gar-opcoes" id="gar-opcoes"></div>
+      <div class="gar-rodape"><span class="mut" id="gar-resumo"></span><span class="mut" id="gar-msg"></span><button class="btn btn-ouro" id="gar-salvar">Salvar caminhonete</button></div>
     </div>
   </section>
 

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sobre · Regulamento · Arena Bruta</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rye&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/s/arena.css">
+<style>main{max-width:860px;margin:0 auto;padding:110px 24px 60px}h1{font-family:Rye,serif;font-weight:400;color:var(--ouro2);font-size:44px;margin:0 0 10px}h2{color:var(--bege);margin:34px 0 8px}p,li{color:var(--mut)}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}th,td{border-bottom:1px solid var(--bd);padding:8px;text-align:left}th{color:var(--dim)}</style>
+</head>
+<body>
+<main class="wrap" style="max-width:860px;padding:110px 24px 60px">
+<h1 class="titulo">Sobre a Arena Bruta</h1>
+<p>A Arena Bruta é um jogo de habilidade da Rangel Tech: duelos de cabo de guerra de caminhonete, 1 contra 1, sem sorte no meio. Proibido para menores de 18 anos.</p>
+<p><a href="/">Voltar ao início</a> · <a href="/regulamento">Regulamento</a></p>
+<section id="creditos-3d"><h2>Créditos dos modelos 3D</h2><p>As caminhonetes do jogo são baseadas em modelos publicados no Sketchfab pelos autores abaixo (licenças CC Attribution 4.0 e Sketchfab Free Standard). Os nomes usados no jogo são fictícios.</p><ul id="lista-creditos"></ul></section>
+</main>
+<script>fetch('/s/modelos/creditos.json').then((r) => r.json()).then((c) => { document.getElementById('lista-creditos').innerHTML = Object.values(c).map((m) => `<li><a href="${m.url}" target="_blank" rel="noopener">${m.modelo.replace(/</g, '&lt;')}</a> por <a href="${m.perfil}" target="_blank" rel="noopener">${m.autor.replace(/</g, '&lt;')}</a> (${m.licenca})</li>`).join('') }).catch(() => {})</script>
+</body>
+</html>

@@ -647,6 +647,10 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
     def pagina_app():
         return FileResponse(ESTATICO / "app.html")
 
+    @app.get("/sobre", response_class=HTMLResponse)
+    def sobre():
+        return FileResponse(ESTATICO / "sobre.html")
+
     @app.get("/regulamento", response_class=HTMLResponse)
     def pagina_regulamento():
         return FileResponse(ESTATICO / "regulamento.html")

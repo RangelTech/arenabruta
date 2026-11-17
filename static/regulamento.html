@@ -29,7 +29,6 @@ table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}th,td{b
   <p>Depósitos pelo Pix entram no saldo após a confirmação do pagamento. Saques são conferidos e pagos na chave Pix cadastrada, sem exigência de novas partidas. Limites de depósito e pausa voluntária ficam no seu perfil.</p>
   <h2>6. Jogo responsável</h2>
   <p>Jogue apenas com dinheiro que você pode perder. O máximo que você arrisca numa partida é a entrada da arena. Se precisar, use a pausa voluntária ou procure ajuda.</p>
-<section id="creditos-3d"><h2>Créditos dos modelos 3D</h2><p>Caminhonetes baseadas em modelos publicados no Sketchfab pelos autores abaixo (licenças CC Attribution 4.0 e Sketchfab Free Standard). Os nomes no jogo são fictícios.</p><ul id="lista-creditos"></ul></section>
 </main>
 <script>
 fetch('/api/regulamento/niveis').then((r) => r.json()).then((j) => {
@@ -37,6 +36,5 @@ fetch('/api/regulamento/niveis').then((r) => r.json()).then((j) => {
   document.getElementById('niveis').innerHTML += j.niveis.map((n) => `<tr><td>${n.nivel}</td><td>${n.nome}</td><td>${(n.reacao / 20).toFixed(2)} s</td><td>${n.troca} rpm</td><td>${n.tracao}%</td><td>${n.erros.length} × ${(n.vacilo / 20).toFixed(1)} s</td></tr>`).join('')
 })
 </script>
-<script>fetch('/s/modelos/creditos.json').then((r) => r.json()).then((c) => { document.getElementById('lista-creditos').innerHTML = Object.values(c).map((m) => `<li><a href="${m.url}" target="_blank" rel="noopener">${m.modelo.replace(/</g, '&lt;')}</a> por <a href="${m.perfil}" target="_blank" rel="noopener">${m.autor.replace(/</g, '&lt;')}</a> (${m.licenca})</li>`).join('') }).catch(() => {})</script>
 </body>
 </html>

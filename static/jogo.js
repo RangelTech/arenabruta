@@ -1,5 +1,6 @@
 // App da Arena Bruta: lobby, partida 3D ao vivo (WebSocket, servidor autoritativo), carteira Pix, ranking e perfil.
 import { criarCena, MODELOS } from '/s/arena3d.js'
+import { abrirGaragem } from '/s/garagem.js'
 const MODELO_IDS = Object.keys(MODELOS)
 const corInt = (h, pad) => (/^#[0-9a-f]{6}$/i.test(h || '') ? parseInt(h.slice(1), 16) : pad)
 const modeloDe = (g) => (typeof g?.modelo === 'number' ? MODELO_IDS[g.modelo % MODELO_IDS.length] : (MODELOS[g?.modelo] ? g.modelo : null))
@@ -282,39 +283,8 @@ function montarArena() {
     card('Você', conta.perfil?.apelido || 'Você', meu, partida.eu?.acerto) + card('Rival', partida.rival?.apelido || 'procurando…', dele, partida.ele?.acerto)
 }
 
-// ---------------- Box ----------------
-let boxCena = null
-const AMOSTRAS = ['#c49a46', '#1c1c1c', '#f2f2f2', '#8a1c1c', '#1f3a5f', '#334532', '#b85c1e', '#6b6b6b']
+// ---------------- Garagem (Box) ----------------
 async function carregarBox() {
   await carregarConta()
-  const b = conta.box, a = conta.acerto, g = conta.garagem || {}
-  $('#bx-modelo').innerHTML = MODELO_IDS.map((k) => `<option value="${k}" ${k === (modeloDe(g) || 'fam3500') ? 'selected' : ''}>${esc(MODELOS[k].nome)}</option>`).join('')
-  $('#bx-cor').value = g.cor || '#c49a46'; $('#bx-roda').value = g.roda || '#d9d9d9'
-  $('#bx-amostras').innerHTML = AMOSTRAS.map((c) => `<button type="button" style="background:${c}" data-cor="${c}" aria-label="Pintar de ${c}"></button>`).join('')
-  const radios = (id, nome, ops, atual, rotulo) => { $(id).innerHTML = `<span class="rot">${rotulo}</span>` + Object.entries(ops).map(([k, v]) => `<label><input type="radio" name="${nome}" value="${k}" ${k === atual ? 'checked' : ''}><span>${esc(v)}</span></label>`).join('') }
-  radios('#bx-pneu', 'pneu', b.pneus, a.pneu, 'Pneu')
-  radios('#bx-relacao', 'relacao', { curta: 'Curta (força na saída)', media: 'Média', longa: 'Longa (menos troca)' }, a.relacao, 'Relação')
-  radios('#bx-mapa', 'mapa', b.mapas, a.mapa, 'Mapa do motor')
-  $('#bx-psi').value = a.psi; $('#bx-psi-v').textContent = a.psi + ' psi'
-  if (!boxCena) { try { boxCena = criarCena($('#box-cena'), { modo: 'heroi' }) } catch {} }
-  previa()
-}
-function previa() {
-  const m = $('#bx-modelo').value
-  $('#box-nome').textContent = MODELOS[m]?.nome || ''
-  boxCena?.trocar?.({ modeloA: m, corA: corInt($('#bx-cor').value, 0xc49a46), modeloB: m, corB: corInt($('#bx-cor').value, 0xc49a46), piso: 'curral' })
-}
-$('#bx-modelo').onchange = previa
-$('#bx-cor').oninput = previa
-$('#bx-amostras').onclick = (e) => { const c = e.target.dataset?.cor; if (c) { $('#bx-cor').value = c; previa() } }
-$('#bx-psi').oninput = (e) => { $('#bx-psi-v').textContent = e.target.value + ' psi' }
-$('#f-box').onsubmit = async (e) => {
-  e.preventDefault()
-  const val = (n) => $(`input[name=${n}]:checked`)?.value
-  try {
-    const r = await api('POST', '/api/box', { acerto: { pneu: val('pneu'), psi: +$('#bx-psi').value, relacao: val('relacao'), mapa: val('mapa') },
-      garagem: { modelo: $('#bx-modelo').value, cor: $('#bx-cor').value, roda: $('#bx-roda').value } })
-    conta.acerto = r.acerto; conta.garagem = r.garagem
-    $('#bx-msg').textContent = 'Acerto salvo. Vale a partir da próxima partida.'
-  } catch (err) { $('#bx-msg').textContent = err.message }
+  abrirGaragem({ conta, salvar: async (corpo) => { const r = await api('POST', '/api/box', corpo); conta.acerto = r.acerto; conta.garagem = r.garagem; return r } })
 }
