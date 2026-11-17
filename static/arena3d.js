@@ -2,6 +2,8 @@
 // criarCena(canvas, { modo: 'heroi' | 'jogo' }) -> { atualizar(estado), destruir() }
 // estado = { pos (-10000..10000), a:{rpm,forca,acel,temp,fervendo,patinou}, b:{...} }  (só visual: quem decide é o servidor)
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js'
+import { criarCaminhonete, ambienteMetal, MODELOS } from './caminhonetes.js'
+export { MODELOS }
 
 const COR = { carvao: 0x121212, ouro: 0xc49a46, couro: 0x63402a, militar: 0x334532, bege: 0xe9dbc4 }
 
@@ -22,40 +24,6 @@ function texturaChao() {
   return t
 }
 
-function caminhonete(cor, olhandoDireita) {
-  const g = new THREE.Group()
-  const pint = new THREE.MeshStandardMaterial({ color: cor, metalness: 0.65, roughness: 0.32 })
-  const preto = new THREE.MeshStandardMaterial({ color: 0x151515, metalness: 0.2, roughness: 0.8 })
-  const cromo = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 1, roughness: 0.18 })
-  const vidro = new THREE.MeshStandardMaterial({ color: 0x1b2430, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.85 })
-  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; g.add(m); return m }
-  add(new THREE.BoxGeometry(5.2, 0.9, 2.1), pint, 0, 1.15, 0)                 // chassi/carroceria
-  add(new THREE.BoxGeometry(2.3, 1.0, 1.95), pint, 0.55, 2.05, 0)             // cabine
-  add(new THREE.BoxGeometry(1.9, 0.75, 1.98), vidro, 0.6, 2.1, 0)             // vidros
-  add(new THREE.BoxGeometry(1.9, 0.12, 2.0), preto, -1.55, 1.66, 0)           // tampa da caçamba
-  add(new THREE.BoxGeometry(0.25, 0.55, 2.2), cromo, 2.68, 1.05, 0)           // para-choque dianteiro
-  add(new THREE.BoxGeometry(0.2, 0.45, 2.2), cromo, -2.66, 1.0, 0)            // para-choque traseiro
-  add(new THREE.BoxGeometry(0.08, 0.5, 1.4), preto, 2.62, 1.45, 0)            // grade
-  const farol = new THREE.MeshStandardMaterial({ color: 0xfff1c4, emissive: 0xffd27a, emissiveIntensity: 1.6 })
-  add(new THREE.BoxGeometry(0.06, 0.18, 0.4), farol, 2.65, 1.48, 0.75); add(new THREE.BoxGeometry(0.06, 0.18, 0.4), farol, 2.65, 1.48, -0.75)
-  const lanterna = new THREE.MeshStandardMaterial({ color: 0xff2a1a, emissive: 0xff2a1a, emissiveIntensity: 1.2 })
-  add(new THREE.BoxGeometry(0.06, 0.3, 0.25), lanterna, -2.6, 1.4, 0.85); add(new THREE.BoxGeometry(0.06, 0.3, 0.25), lanterna, -2.6, 1.4, -0.85)
-  add(new THREE.CylinderGeometry(0.09, 0.09, 1.5, 12), cromo, -0.6, 2.25, 1.0)  // chaminé (escapamento alto)
-  const rodas = []
-  const pneu = new THREE.CylinderGeometry(0.62, 0.62, 0.5, 24)
-  const aro = new THREE.CylinderGeometry(0.36, 0.36, 0.52, 16)
-  for (const [x, z] of [[1.65, 1.05], [1.65, -1.05], [-1.65, 1.05], [-1.65, -1.05]]) {
-    const r = new THREE.Group()
-    const p = new THREE.Mesh(pneu, preto); p.rotation.x = Math.PI / 2; p.castShadow = true; r.add(p)
-    const a = new THREE.Mesh(aro, cromo); a.rotation.x = Math.PI / 2; r.add(a)
-    r.position.set(x, 0.62, z); g.add(r); rodas.push(r)
-  }
-  const engate = new THREE.Object3D(); engate.position.set(-2.85, 0.9, 0); g.add(engate)
-  const escape = new THREE.Object3D(); escape.position.set(-0.6, 3.05, 1.0); g.add(escape)
-  if (!olhandoDireita) g.rotation.y = Math.PI
-  return { g, rodas, engate, escape }
-}
-
 export function criarCena(canvas, opcoes = {}) {
   const modo = opcoes.modo || 'jogo'
   const reduzir = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -64,6 +32,7 @@ export function criarCena(canvas, opcoes = {}) {
   r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap
   r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05
   const cena = new THREE.Scene()
+  cena.environment = ambienteMetal(r)  // reflexo para o cromado e a pintura metálica
   cena.background = new THREE.Color(0x2a1a12)
   cena.fog = new THREE.Fog(0x3a2418, 30, 95)
   // céu de pôr do sol (esfera com gradiente)
@@ -87,8 +56,8 @@ export function criarCena(canvas, opcoes = {}) {
     for (let x = -36; x <= 36; x += 4) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.6, 0.25), madeira); p.position.set(x, 0.8, z); p.castShadow = true; cena.add(p) }
     for (const y of [0.55, 1.25]) { const t = new THREE.Mesh(new THREE.BoxGeometry(72, 0.18, 0.12), madeira); t.position.set(0, y, z); cena.add(t) }
   }
-  const A = caminhonete(COR.ouro, false)   // a da esquerda puxa para a esquerda (pos > 0)
-  const B = caminhonete(COR.militar, true)
+  const A = criarCaminhonete(opcoes.modeloA || 'touro3500', opcoes.corA ?? COR.ouro, false)   // a da esquerda puxa para a esquerda (pos > 0)
+  const B = criarCaminhonete(opcoes.modeloB || 'brutus2500', opcoes.corB ?? COR.militar, true)
   cena.add(A.g, B.g)
   // corrente: elos alternados entre os engates
   const elos = []
@@ -96,10 +65,18 @@ export function criarCena(canvas, opcoes = {}) {
   const aco = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, metalness: 1, roughness: 0.35 })
   for (let i = 0; i < 26; i++) { const e = new THREE.Mesh(eloGeo, aco); e.castShadow = true; cena.add(e); elos.push(e) }
   // poeira e fumaça (partículas com ciclo fixo)
+  // partícula redonda e esfumaçada (sem textura o ponto sai quadrado e a fumaça parecia uma caixa preta voando)
+  const bolinha = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64
+    const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32)
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)')
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64)
+    return new THREE.CanvasTexture(c)
+  })()
   function nuvem(cor, n, tam) {
     const geo = new THREE.BufferGeometry()
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3))
-    const mat = new THREE.PointsMaterial({ color: cor, size: tam, transparent: true, opacity: 0.55, depthWrite: false, sizeAttenuation: true })
+    const mat = new THREE.PointsMaterial({ color: cor, size: tam * 1.6, map: bolinha, transparent: true, opacity: 0.5, depthWrite: false, sizeAttenuation: true })
     const pts = new THREE.Points(geo, mat); cena.add(pts)
     return { pts, n, vida: new Float32Array(n), base: new Float32Array(n * 3) }
   }
@@ -148,8 +125,8 @@ export function criarCena(canvas, opcoes = {}) {
     A.g.position.y = vib(e.a) + 0.0; B.g.position.y = vib(e.b)
     A.g.rotation.z = (e.a.acel ? 0.035 : 0); B.g.rotation.z = -(e.b.acel ? 0.035 : 0)
     const giro = (c) => (c.acel ? 0.25 + c.rpm / 9000 : 0.04)
-    A.rodas.forEach((w) => (w.children.forEach((m) => (m.rotation.y += giro(e.a)))))
-    B.rodas.forEach((w) => (w.children.forEach((m) => (m.rotation.y += giro(e.b)))))
+    A.rodas.forEach((w) => (w.rotation.z += giro(e.a)))   // a roda inteira gira (banda de rodagem e raios)
+    B.rodas.forEach((w) => (w.rotation.z -= giro(e.b)))
     // corrente esticada com leve barriga
     const pa = new THREE.Vector3(), pb = new THREE.Vector3()
     A.engate.getWorldPosition(pa); B.engate.getWorldPosition(pb)
