@@ -1,4 +1,5 @@
 """Critérios de aceite da Arena Bruta (documento §12 + decisões do Lucas na spec 45 §H)."""
+from produtos_core.teste import entrar
 import json
 import os
 import re
@@ -23,8 +24,7 @@ def amb(tmp_path):
 
     def pessoa(email, apelido, nasc="1990-01-01", pix="pix-" + "x"):
         c = TestClient(app)
-        cod = c.post("/api/entrar/codigo", json={"email": email}).json()["codigo_dev"]
-        assert c.post("/api/entrar", json={"email": email, "codigo": cod}).status_code == 200
+        entrar(c, email)
         assert c.post("/api/perfil", json={"apelido": apelido, "nascimento": nasc, "pix_chave": pix + apelido, "pix_tipo": "email"}).status_code == 200
         return c
 
@@ -52,8 +52,7 @@ def jogar(c, pid, cmds):
 def test_menor_de_18_bloqueado(amb):
     app, pessoa, adm, dep = amb
     c = TestClient(app)
-    cod = c.post("/api/entrar/codigo", json={"email": "kid@x.com"}).json()["codigo_dev"]
-    c.post("/api/entrar", json={"email": "kid@x.com", "codigo": cod})
+    entrar(c, "kid@x.com")
     assert c.post("/api/perfil", json={"apelido": "Kid", "nascimento": "2012-01-01"}).status_code == 403
 
 
