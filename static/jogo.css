@@ -177,3 +177,4 @@ input,select{background:var(--bg2);border:1px solid var(--bd);border-radius:12px
 @keyframes luzpisca{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){.luz-troca{animation:none}}
 #v-partida{scroll-margin-top:76px}  /* a barra fixa do topo não cobre o palco ao começar a partida */
+@media (max-width:760px){#v-partida{scroll-margin-top:122px}}  /* no celular a barra tem duas linhas */
