@@ -129,7 +129,8 @@ function conectar() {
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + `/ws/partida/${partida.id}`)
   ws.onmessage = (ev) => {
     const m = JSON.parse(ev.data)
-    if (m.t === 'ok') { lado = m.lado; partida = { ...partida, ...m.partida }; montarArena(); if (lado === 'b') { $('#nome-b').textContent = conta.perfil?.apelido || 'Você'; $('#nome-a').textContent = m.partida.rival?.apelido || 'Rival' } }
+    if (m.t === 'ok') { lado = m.lado; partida = { ...partida, ...m.partida }; montarArena(); if (acel.classList.contains('on')) enviar({ acel: 1 })  // já segurava antes da conexão abrir
+ if (lado === 'b') { $('#nome-b').textContent = conta.perfil?.apelido || 'Você'; $('#nome-a').textContent = m.partida.rival?.apelido || 'Rival' } }
     if (m.t === 'contagem') { $('#espera').hidden = true; const c = $('#contagem'); c.hidden = false; c.textContent = m.n; somMotor(true) }
     if (m.t === 'estado') {
       $('#contagem').hidden = true; $('#espera').hidden = true

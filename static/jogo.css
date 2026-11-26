@@ -176,3 +176,4 @@ input,select{background:var(--bg2);border:1px solid var(--bd);border-radius:12px
 .luz-troca{position:absolute;top:8px;right:10px;font-family:"Bebas Neue";font-size:18px;letter-spacing:.06em;color:#111;background:#ffcf3a;border-radius:8px;padding:2px 8px;box-shadow:0 0 14px #ffcf3a;animation:luzpisca .25s steps(2) infinite}
 @keyframes luzpisca{50%{opacity:.55}}
 @media (prefers-reduced-motion:reduce){.luz-troca{animation:none}}
+#v-partida{scroll-margin-top:76px}  /* a barra fixa do topo não cobre o palco ao começar a partida */
