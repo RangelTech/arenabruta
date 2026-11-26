@@ -421,7 +421,7 @@ def criar_app(cfg: Config | None = None, tick_s: float = 1 / jogo.TICKS_S) -> Fa
             piso = p.get("piso") or "curral"
             self.bot = ficha_do_bot(p)
             self.carros = {"a": jogo.novo_carro(json.loads(p["acerto_a"] or "null"), piso),
-                           "b": jogo.novo_carro(self.bot["acerto"] if self.bot else json.loads(p["acerto_b"] or "null"), piso)}
+                           "b": jogo.carro_bot(self.bot, piso) if self.bot else jogo.novo_carro(json.loads(p["acerto_b"] or "null"), piso)}
             self.fila = {"a": [], "b": []}
             self.entradas = {"a": [], "b": []}
             self.ws: dict[str, WebSocket] = {}

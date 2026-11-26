@@ -95,6 +95,8 @@ async function entrarNaFila(arena, cenario) {
 function abrirPartida() {
   $$('.vista').forEach((s) => s.classList.toggle('on', s.id === 'v-partida'))
   $('#resultado').hidden = true
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur()  // botão com foco não "clica" com o espaço
+  requestAnimationFrame(() => $('#v-partida').scrollIntoView({ block: 'start' }))  // palco e controles inteiros na tela
   $('#nome-a').textContent = conta.perfil?.apelido || 'Você'
   if (!cena) cena = criarCena($('#cena3d'), { modo: 'jogo' })
   else cena.tamanho()
@@ -139,7 +141,11 @@ function conectar() {
       $('#rpm').textContent = eu.rpm
       $('#rpm-arco').style.strokeDashoffset = 157 - 157 * Math.min(1, (eu.rpm - 800) / 6200)
       $('#temp').style.width = Math.min(100, eu.temp / 10) + '%'
-      $('#aviso-motor').textContent = eu.fervendo ? 'MOTOR FERVENDO!' : eu.patinou ? 'patinando: alivie ou suba a marcha' : eu.rpm > 6000 ? 'giro alto: esquentando' : pos > 3000 ? 'arrastando o rival!' : 'temperatura'
+      // treino/história ensina o segredo (spec 58 §3): troca no topo do giro e um respiro quando a temperatura passa de 700
+      const ensina = partida.modo === 'treino'
+      const luz = $('#luz-troca')
+      luz.hidden = !(ensina && eu.marcha < 5 && eu.rpm >= 6800)
+      $('#aviso-motor').textContent = eu.fervendo ? 'MOTOR FERVENDO!' : ensina && eu.temp >= 700 ? 'quente: solte o acelerador um instante' : eu.patinou ? 'patinando: alivie ou suba a marcha' : !ensina && eu.rpm > 6000 ? 'giro alto: esquentando' : ensina && eu.rpm < 6800 && eu.acel ? 'segure até a luz TROQUE' : pos > 3000 ? 'arrastando o rival!' : 'temperatura'
       somRpm(eu.rpm, eu.acel)
     }
     if (m.t === 'fim') fimPartida(m)
@@ -168,13 +174,14 @@ const liga = (on) => { acel.classList.toggle('on', on); enviar({ acel: on ? 1 : 
 acel.addEventListener('pointerdown', (e) => { e.preventDefault(); acel.setPointerCapture(e.pointerId); liga(true) })
 acel.addEventListener('pointerup', () => liga(false)); acel.addEventListener('pointercancel', () => liga(false))
 $('#b-marcha').onclick = () => enviar({ marcha: 1 })
+// segurar o espaço manda eventos REPETIDOS: todos são bloqueados, senão cada um rola a página e o palco some (spec 58 §1)
 addEventListener('keydown', (e) => {
   if (!$('#v-partida').classList.contains('on')) return
-  if (e.code === 'Space' && !e.repeat) { e.preventDefault(); liga(true) }
-  if (e.code === 'ArrowUp') { e.preventDefault(); enviar({ marcha: 1 }) }
-  if (e.code === 'ArrowDown') { e.preventDefault(); enviar({ marcha: -1 }) }
-})
-addEventListener('keyup', (e) => { if (e.code === 'Space' && $('#v-partida').classList.contains('on')) liga(false) })
+  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) liga(true) }
+  if (e.code === 'ArrowUp') { e.preventDefault(); if (!e.repeat) enviar({ marcha: 1 }) }
+  if (e.code === 'ArrowDown') { e.preventDefault(); if (!e.repeat) enviar({ marcha: -1 }) }
+}, { passive: false })
+addEventListener('keyup', (e) => { if (e.code === 'Space' && $('#v-partida').classList.contains('on')) { e.preventDefault(); liga(false) } })
 
 // ronco do diesel (Web Audio): grave que acompanha o giro + assobio da turbina no giro alto
 let audio = null

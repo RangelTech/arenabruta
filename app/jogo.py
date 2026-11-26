@@ -249,13 +249,21 @@ def ficha_bot(perfil: str, piso: str, nivel: int | None = None) -> dict:
     if "teto_temp" in d:
         p["teto_temp"] = min(p["teto_temp"], d["teto_temp"])
     p["erros"], p["vacilo"] = list(d.get("erros", [])), d.get("vacilo", 0)
-    if nivel is not None and nivel < 20:  # modo história: mais lento e mais erros quanto menor o nível (tabela fixa)
-        k = 20 - max(1, nivel)
-        p["reacao"] += k
-        p["troca"] = max(3000, p["troca"] - k * 60)
-        p["erros"] = p["erros"] + [60 + i * 50 for i in range(k // 2)]
-        p["vacilo"] = max(p["vacilo"], 6 + k)
-    return {"perfil": perfil, "nome": pf["nome"], "acerto": ac, "piloto": p, "nivel": nivel}
+    forca = 1000 if nivel is None else ESCADA[max(1, min(20, nivel)) - 1]
+    return {"perfil": perfil, "nome": pf["nome"], "acerto": ac, "piloto": p, "nivel": nivel, "forca": forca}
+
+
+# Modo história (spec 58 §3): o nível controla a FORÇA do bot (por mil), sobre a mesma pilotagem do perfil. Antes o nível mexia
+# em reação/troca/erros, e tirar o pé esfriava o motor do bot e o deixava MAIS forte: a escada não subia e ninguém ganhava.
+# Calibrado por simulação (jogadores iniciante/médio/bom): iniciante vence 1-3, médio até ~8, bom até ~14; o 20 é o perfil cheio.
+ESCADA = [620, 650, 670, 690, 700, 705, 715, 725, 735, 740, 745, 750, 755, 760, 780, 810, 850, 890, 930, 1000]
+
+
+def carro_bot(bot: dict, piso: str) -> dict:
+    """Carro do bot já com a força do nível aplicada (combate: força cheia)."""
+    c = novo_carro(bot["acerto"], piso)
+    c["norma"] = c["norma"] * bot.get("forca", 1000) // 1000
+    return c
 
 
 # ---------------- comandos e simulação (replay) ----------------
@@ -279,7 +287,7 @@ def simular(entradas_a: list, entradas_b: list | None = None, bot_b: dict | None
             acerto_b: dict | None = None, piso: str = "curral", ate: int = DURACAO) -> dict:
     """entradas = [[tick, {cmd}], ...] em ordem. Lado B = jogador (entradas_b + acerto_b) ou bot (bot_b = ficha_bot(...))."""
     a = novo_carro(acerto_a, piso)
-    b = novo_carro(bot_b["acerto"] if bot_b else acerto_b, piso)
+    b = carro_bot(bot_b, piso) if bot_b else novo_carro(acerto_b, piso)
     ia = ib = 0
     entradas_b = entradas_b or []
     pos = 0

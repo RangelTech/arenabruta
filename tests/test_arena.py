@@ -215,11 +215,30 @@ def test_bots_fortes_mas_bativeis():
 
 def test_modo_historia_nivel_baixo_e_mais_fraco():
     def tot(n):
-        fb = jogo.ficha_bot("tecnico", "terra", n); c = jogo.novo_carro(fb["acerto"], "terra"); s = 0
+        fb = jogo.ficha_bot("tecnico", "terra", n); c = jogo.carro_bot(fb, "terra"); s = 0
         for t in range(jogo.DURACAO):
             jogo.aplicar(c, jogo.piloto(fb["piloto"], t, c)); s += jogo.passo_carro(c)
         return s
-    assert tot(1) < tot(10) < tot(20)
+    forcas = [tot(n) for n in range(1, 21)]
+    assert forcas == sorted(forcas) and forcas[0] < forcas[-1]  # escada de verdade: cada nível é mais forte que o anterior
+    assert jogo.ficha_bot("tecnico", "terra", None)["forca"] == jogo.ficha_bot("tecnico", "terra", 20)["forca"] == 1000
+
+
+def test_escada_por_tipo_de_jogador():
+    """Spec 58 §3: jogador comum (troca a ~5.500 rpm, sem o segredo dos 7.000) vence os níveis baixos e perde os altos."""
+    def vence(p, nivel, piso="terra"):
+        ac = jogo.melhor_acerto_pneu(piso, "media", "torque")
+        ent, c, ultimo = [], jogo.novo_carro(ac, piso), {}
+        for t in range(jogo.DURACAO):
+            cmd = jogo.piloto(p, t, c)
+            if cmd != ultimo or "marcha" in cmd:
+                ent.append([t, cmd]); ultimo = {k: v for k, v in cmd.items() if k != "marcha"}
+            jogo.aplicar(c, cmd); jogo.passo_carro(c)
+        return jogo.simular(ent, bot_b=jogo.ficha_bot("paciente", piso, nivel), acerto_a=ac, piso=piso)["vencedor"] == "a"
+    medio = dict(reacao=10, troca=5200, teto_temp=900, esfria=10, erros=[300], vacilo=12)
+    bom = dict(reacao=5, troca=5500, teto_temp=900, esfria=10)
+    assert vence(medio, 1) and vence(medio, 5) and not vence(medio, 15) and not vence(medio, 20)
+    assert vence(bom, 1) and vence(bom, 8) and not vence(bom, 18) and not vence(bom, 20)
 
 
 def test_box_salva_acerto_e_garagem_e_cor_nao_muda_fisica(amb):
